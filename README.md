@@ -19,9 +19,9 @@ Das Kind spielt auf einem echten Klavier — das Mikrofon erkennt die gespielten
 ## Voraussetzungen
 
 - [Node.js](https://nodejs.org/) Version 18 oder neuer
-- Ein moderner Browser (Chrome, Firefox, Safari, Edge)
 - Ein Mikrofon (eingebaut oder extern)
-- Optional: iPad mit Safari für die beste Erfahrung
+- **Für Desktop-App:** Windows, macOS oder Linux
+- **Für iPad:** Safari-Browser im selben WLAN
 
 ---
 
@@ -41,7 +41,42 @@ git checkout claude/piano-learning-app-kids-thejbz
 npm install
 ```
 
-### 3. App starten (Entwicklungsmodus)
+---
+
+## Option A: Desktop-App (kein Browser, kein Server nötig)
+
+Die App läuft als eigenständiges Programm — kein Browser, kein Server, kein Docker.  
+Das Mikrofon wird automatisch freigegeben, keine Browser-Popups.
+
+### Im Entwicklungsmodus starten (zum Testen)
+
+```bash
+npm run electron:dev
+```
+
+### Installierbare .exe / .dmg / AppImage bauen
+
+**Windows (.exe Installer):**
+```bash
+npm run electron:build:win
+```
+
+**macOS (.dmg):**
+```bash
+npm run electron:build:mac
+```
+
+**Linux (.AppImage):**
+```bash
+npm run electron:build:linux
+```
+
+Die fertige Installationsdatei liegt im Ordner `release/`.  
+Einfach ausführen — die App ist danach wie ein normales Programm installiert.
+
+---
+
+## Option B: Im Browser starten (Entwicklung / iPad)
 
 ```bash
 npm run dev
@@ -68,13 +103,13 @@ Dann die angezeigte Netzwerk-Adresse (z.B. `http://192.168.1.100:5173`) im iPad-
 
 ---
 
-## Produktions-Build erstellen
+## Produktions-Build (nur Web)
 
 ```bash
 npm run build
 ```
 
-Die fertige App liegt im Ordner `dist/` und kann auf jedem Webserver gehostet werden (z.B. Netlify, Vercel, GitHub Pages).
+Die fertige App liegt im Ordner `dist/` und kann auf jedem Webserver gehostet werden.
 
 Build lokal testen:
 
@@ -167,6 +202,7 @@ Empfohlen für Anfänger: **C4 bis G4** (mittlere Oktave, nur weiße Tasten).
 | Pitch-Erkennung | [pitchy](https://github.com/ianprime0509/pitchy) v4 (McLeod Pitch Method) |
 | Styling | Tailwind CSS v3 |
 | PWA | vite-plugin-pwa + Workbox autoUpdate |
+| Desktop-App | Electron 32 + electron-builder |
 | Song-Daten | TypeScript-Module (typsicher, IDE-Autovervollständigung) |
 
 ---
