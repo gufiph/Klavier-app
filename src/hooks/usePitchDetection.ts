@@ -21,7 +21,7 @@ export function usePitchDetection(): UsePitchDetectionResult {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const detectorRef = useRef<PitchDetector<Float32Array> | null>(null);
-  const bufferRef = useRef<Float32Array | null>(null);
+  const bufferRef = useRef<Float32Array<ArrayBuffer> | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
 
   const stopListening = useCallback(() => {
@@ -54,7 +54,7 @@ export function usePitchDetection(): UsePitchDetectionResult {
       const bufferLength = analyser.fftSize;
       const detector = PitchDetector.forFloat32Array(bufferLength);
       detectorRef.current = detector;
-      bufferRef.current = new Float32Array(bufferLength);
+      bufferRef.current = new Float32Array(new ArrayBuffer(bufferLength * Float32Array.BYTES_PER_ELEMENT));
 
       setPermissionDenied(false);
       setIsListening(true);
