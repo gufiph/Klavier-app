@@ -1,34 +1,40 @@
-import { PIANO_KEYS, WHITE_KEY_COUNT } from '../../constants/keyboard';
+import { PIANO_KEYS } from '../../constants/keyboard';
 import { getNoteColor } from '../../constants/boomwhacker';
 import type { Song } from '../../types/music';
 import type { FeedbackState } from '../../types/game';
+import type { KeyRange } from '../../utils/songRange';
 
 interface NoteWaterfallProps {
   song: Song;
   currentNoteIndex: number;
   feedback: FeedbackState;
+  keyRange: KeyRange;
 }
 
-const LOOKAHEAD = 14;
+const LOOKAHEAD = 10;
 
-export function NoteWaterfall({ song, currentNoteIndex, feedback }: NoteWaterfallProps) {
-  const wkPct = 100 / WHITE_KEY_COUNT;
+export function NoteWaterfall({ song, currentNoteIndex, feedback, keyRange }: NoteWaterfallProps) {
+  const { minWi, visibleCount } = keyRange;
+  const wkPct = 100 / visibleCount;
   const bkPct = wkPct * 0.58;
   const upcoming = song.notes.slice(currentNoteIndex, currentNoteIndex + LOOKAHEAD);
+  const rowPct = 88 / LOOKAHEAD;
+  const blockHeightPct = rowPct * 0.88;
+  const fontSizeVw = Math.min(wkPct * 0.55, 6);
 
   return (
     <div className="relative w-full h-full bg-gray-950 overflow-hidden">
       {/* Lane dividers */}
-      {Array.from({ length: WHITE_KEY_COUNT + 1 }).map((_, i) => (
+      {Array.from({ length: visibleCount + 1 }).map((_, i) => (
         <div
           key={i}
-          className="absolute top-0 bottom-0 w-px bg-gray-800/60"
+          className="absolute top-0 bottom-0 w-px bg-gray-700/50"
           style={{ left: `${i * wkPct}%` }}
         />
       ))}
 
       {/* Trigger line */}
-      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/20" />
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/40" />
 
       {/* Note blocks */}
       {upcoming.map((event, idx) => {
@@ -38,50 +44,52 @@ export function NoteWaterfall({ song, currentNoteIndex, feedback }: NoteWaterfal
 
         const color = getNoteColor(event.note);
         const isCurrent = idx === 0;
+        const isBlack = key.type === 'black';
+        const relativeWi = key.whiteIndex - minWi;
 
-        let leftPct: number;
-        let widthPct: number;
-        if (key.type === 'white') {
-          leftPct = key.whiteIndex * wkPct + 0.2;
-          widthPct = wkPct - 0.6;
-        } else {
-          leftPct = (key.whiteIndex + 1) * wkPct - bkPct / 2;
-          widthPct = bkPct;
-        }
-
-        const rowPct = 90 / LOOKAHEAD;
+        const leftPct = isBlack
+          ? (relativeWi + 1) * wkPct - bkPct / 2
+          : relativeWi * wkPct + 0.3;
+        const widthPct = isBlack ? bkPct : wkPct - 0.6;
         const bottomPct = idx * rowPct;
+        const noteLetter = event.note.replace(/[#\d]/g, '');
+        const isSharp = event.note.includes('#');
 
         return (
           <div
             key={`${currentNoteIndex + idx}-${event.note}`}
-            className="absolute rounded-sm transition-all duration-200"
+            className="absolute rounded-xl flex items-center justify-center transition-all duration-150"
             style={{
               left: `${leftPct}%`,
               width: `${widthPct}%`,
               bottom: `${bottomPct}%`,
-              height: `${rowPct * 0.82}%`,
+              height: `${blockHeightPct}%`,
               backgroundColor: color,
-              opacity: isCurrent ? 1 : Math.max(0.25, 0.85 - idx * 0.05),
-              boxShadow: isCurrent ? `0 0 14px 4px ${color}55` : undefined,
-              outline:
-                isCurrent && feedback === 'correct'
-                  ? '2px solid #22c55e'
-                  : isCurrent && feedback === 'wrong'
-                  ? '2px solid #ef4444'
-                  : undefined,
-              zIndex: key.type === 'black' ? 2 : 1,
+              opacity: isCurrent ? 1 : Math.max(0.65, 1 - idx * 0.04),
+              boxShadow: isCurrent
+                ? `0 0 28px 10px ${color}99, 0 0 12px 4px ${color}`
+                : `0 0 8px 2px ${color}66`,
+              outline: isCurrent && feedback === 'correct'
+                ? '3px solid #22c55e'
+                : isCurrent && feedback === 'wrong'
+                ? '3px solid #ef4444'
+                : undefined,
+              zIndex: isBlack ? 2 : 1,
             }}
-          />
+          >
+            <span
+              className="font-black text-white select-none pointer-events-none"
+              style={{
+                fontSize: `${fontSizeVw}vw`,
+                lineHeight: 1,
+                textShadow: '0 1px 4px rgba(0,0,0,0.8)',
+              }}
+            >
+              {isSharp ? '♯' : noteLetter}
+            </span>
+          </div>
         );
       })}
-
-      {/* Current note label */}
-      {upcoming[0] && !upcoming[0].rest && (
-        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 text-white/50 text-xs font-mono pointer-events-none">
-          {upcoming[0].note}
-        </div>
-      )}
     </div>
   );
 }

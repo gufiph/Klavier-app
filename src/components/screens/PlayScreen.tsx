@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import type { Song } from '../../types/music';
 import { usePitchDetection } from '../../hooks/usePitchDetection';
 import { useGameLogic } from '../../hooks/useGameLogic';
@@ -8,6 +8,7 @@ import { PianoKeyboard } from '../music/PianoKeyboard';
 import { MicFeedbackBar } from '../feedback/MicFeedbackBar';
 import { CorrectFlash } from '../feedback/CorrectFlash';
 import { ProgressDots } from '../feedback/ProgressDots';
+import { getSongKeyRange } from '../../utils/songRange';
 
 interface PlayScreenProps {
   song: Song;
@@ -53,6 +54,7 @@ export function PlayScreen({ song, onBack, onComplete }: PlayScreenProps) {
     onBack();
   }, [stopListening, reset, onBack]);
 
+  const keyRange = useMemo(() => getSongKeyRange(song), [song]);
   const nonRestCount = song.notes.filter(n => !n.rest).length;
   const completedCount = song.notes.slice(0, currentNoteIndex).filter(n => !n.rest).length;
   const currentNote = song.notes[currentNoteIndex];
@@ -72,7 +74,7 @@ export function PlayScreen({ song, onBack, onComplete }: PlayScreenProps) {
 
       {/* Waterfall */}
       <div className="flex-1 min-h-0">
-        <NoteWaterfall song={song} currentNoteIndex={currentNoteIndex} feedback={feedback} />
+        <NoteWaterfall song={song} currentNoteIndex={currentNoteIndex} feedback={feedback} keyRange={keyRange} />
       </div>
 
       {/* Mic bar */}
@@ -84,6 +86,7 @@ export function PlayScreen({ song, onBack, onComplete }: PlayScreenProps) {
           expectedNote={expectedNote}
           detectedNote={detectedPitch?.noteName ?? null}
           feedback={feedback}
+          keyRange={keyRange}
         />
       </div>
 
