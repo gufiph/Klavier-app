@@ -41,7 +41,15 @@ export function usePitchDetection(): UsePitchDetectionResult {
   const startListening = useCallback(async (audioContext: AudioContext) => {
     try {
       audioCtxRef.current = audioContext;
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+          channelCount: 1,
+        },
+        video: false,
+      });
       streamRef.current = stream;
 
       const source = audioContext.createMediaStreamSource(stream);
