@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import type { Song } from '../../types/music';
 import { usePitchDetection } from '../../hooks/usePitchDetection';
 import { useGameLogic } from '../../hooks/useGameLogic';
@@ -8,6 +8,7 @@ import { PianoKeyboard } from '../music/PianoKeyboard';
 import { MicFeedbackBar } from '../feedback/MicFeedbackBar';
 import { CorrectFlash } from '../feedback/CorrectFlash';
 import { ProgressDots } from '../feedback/ProgressDots';
+import { getSongKeyRange } from '../../utils/songRange';
 
 interface PlayScreenProps {
   song: Song;
@@ -21,11 +22,10 @@ export function PlayScreen({ song, onBack, onComplete }: PlayScreenProps) {
 
   const { detectedPitch, isListening, permissionDenied, startListening, stopListening } =
     usePitchDetection();
-  const { playCorrect } = useAudioFeedback();
+  useAudioFeedback();
   const { currentNoteIndex, feedback, isComplete, start, reset } = useGameLogic(
     song,
-    gameStarted ? detectedPitch : null,
-    playCorrect
+    gameStarted ? detectedPitch : null
   );
 
   useEffect(() => {
@@ -53,42 +53,66 @@ export function PlayScreen({ song, onBack, onComplete }: PlayScreenProps) {
     onBack();
   }, [stopListening, reset, onBack]);
 
+  const keyRange = useMemo(() => getSongKeyRange(song), [song]);
   const nonRestCount = song.notes.filter(n => !n.rest).length;
   const completedCount = song.notes.slice(0, currentNoteIndex).filter(n => !n.rest).length;
   const currentNote = song.notes[currentNoteIndex];
   const expectedNote = currentNote && !currentNote.rest ? currentNote.note : null;
 
   return (
-    <div className="relative flex flex-col h-screen bg-gray-950 text-white overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center px-4 py-3 bg-gray-900 border-b border-gray-800 flex-shrink-0">
-        <button onClick={handleBack} className="mr-3 text-2xl p-1 rounded-lg active:bg-gray-700">
+    <div className="relative flex flex-col h-[100dvh] bg-gray-950 text-white overflow-hidden
+                    landscape:flex-row landscape:items-stretch">
+      {/* Header — portrait: top bar | landscape: left side strip */}
+      <div className="flex items-center px-3 py-2 bg-gray-900 border-b border-gray-800
+                      flex-shrink-0 landscape:flex-col landscape:border-b-0 landscape:border-r
+                      landscape:py-4 landscape:px-2 landscape:gap-3 landscape:w-12 landscape:justify-start">
+        <button
+          onClick={handleBack}
+          className="text-xl p-1 rounded-lg active:bg-gray-700 flex-shrink-0"
+        >
           ◄
         </button>
-        <span className="text-xl font-bold truncate">
+        <span className="text-lg font-bold truncate landscape:hidden">
           {song.coverEmoji} {song.title}
         </span>
+        <span className="hidden landscape:block text-xl">{song.coverEmoji}</span>
       </div>
 
-      {/* Waterfall */}
-      <div className="flex-1 min-h-0">
-        <NoteWaterfall song={song} currentNoteIndex={currentNoteIndex} feedback={feedback} />
+      {/* Main area — portrait: full width column | landscape: row */}
+      <div className="flex flex-col flex-1 min-h-0 min-w-0
+                      landscape:flex-row landscape:flex-1">
+
+        {/* Waterfall — portrait: takes remaining height | landscape: left column */}
+        <div className="flex-1 min-h-0 min-w-0 landscape:flex-1">
+          <NoteWaterfall
+            song={song}
+            currentNoteIndex={currentNoteIndex}
+            feedback={feedback}
+            keyRange={keyRange}
+          />
+        </div>
+
+        {/* Right column in landscape: keyboard + mic + progress */}
+        <div className="flex flex-col flex-shrink-0
+                        landscape:w-2/5 landscape:border-l landscape:border-gray-800">
+
+          {/* Mic bar */}
+          <MicFeedbackBar detectedPitch={detectedPitch} isListening={isListening} />
+
+          {/* Piano keyboard */}
+          <div className="h-32 sm:h-40 landscape:h-full landscape:flex-1 px-1 pb-1 flex-shrink-0">
+            <PianoKeyboard
+              expectedNote={expectedNote}
+              detectedNote={detectedPitch?.noteName ?? null}
+              feedback={feedback}
+              keyRange={keyRange}
+            />
+          </div>
+
+          {/* Progress */}
+          <ProgressDots current={completedCount} total={nonRestCount} />
+        </div>
       </div>
-
-      {/* Mic bar */}
-      <MicFeedbackBar detectedPitch={detectedPitch} isListening={isListening} />
-
-      {/* Piano keyboard */}
-      <div className="h-36 sm:h-44 px-1 pb-1 flex-shrink-0">
-        <PianoKeyboard
-          expectedNote={expectedNote}
-          detectedNote={detectedPitch?.noteName ?? null}
-          feedback={feedback}
-        />
-      </div>
-
-      {/* Progress */}
-      <ProgressDots current={completedCount} total={nonRestCount} />
 
       {/* Start overlay */}
       {!gameStarted && (

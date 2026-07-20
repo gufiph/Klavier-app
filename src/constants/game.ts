@@ -1,5 +1,5 @@
-export const CENTS_TOLERANCE = 50;
-export const CLARITY_THRESHOLD = 0.9;
+export const CENTS_TOLERANCE = 60;       // etwas toleranter für Kinder-Spielweise
+export const CLARITY_THRESHOLD = 0.82;  // war 0.9 – Piano-Töne haben teils niedrigere Klarheit
 export const FEEDBACK_DURATION_MS = 600;
 export const WRONG_FEEDBACK_DURATION_MS = 300;
 export const MIN_FREQUENCY = 100;

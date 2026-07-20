@@ -46,14 +46,13 @@ export function usePitchDetection(): UsePitchDetectionResult {
 
       const source = audioContext.createMediaStreamSource(stream);
       const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 2048;
+      analyser.fftSize = 4096;  // größeres Fenster = bessere Frequenzauflösung für tiefe Töne
       analyser.smoothingTimeConstant = 0;
       source.connect(analyser);
       analyserRef.current = analyser;
 
       const bufferLength = analyser.fftSize;
-      const detector = PitchDetector.forFloat32Array(bufferLength);
-      detectorRef.current = detector;
+      detectorRef.current = PitchDetector.forFloat32Array(bufferLength);
       bufferRef.current = new Float32Array(new ArrayBuffer(bufferLength * Float32Array.BYTES_PER_ELEMENT));
 
       setPermissionDenied(false);
