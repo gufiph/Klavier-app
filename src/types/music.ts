@@ -10,6 +10,7 @@ export interface NoteEvent {
   note: NoteName;
   duration: NoteDuration;
   rest?: boolean;
+  lyric?: string;
 }
 
 export interface Song {

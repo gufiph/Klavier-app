@@ -69,8 +69,11 @@ export function useGameLogic(
 
     if (detected === expected && centsOk) {
       processingRef.current = true;
-      setFeedback('idle');
-      advanceToIndex(idx + 1);
+      setFeedback('correct');
+      feedbackTimerRef.current = setTimeout(() => {
+        setFeedback('idle');
+        advanceToIndex(idx + 1);
+      }, 300);
     } else if (detected !== expected) {
       clearTimeout(feedbackTimerRef.current);
       setFeedback('wrong');

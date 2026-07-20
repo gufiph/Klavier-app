@@ -32,7 +32,8 @@ export function PianoKeyboard({ expectedNote, detectedNote, keyRange }: PianoKey
         const color = getNoteColor(key.note);
         const isActive = isExpected || isDetected;
         const relativeWi = key.whiteIndex - minWi;
-        const noteLetter = key.note.replace(/\d/g, '');
+        const raw = key.note.replace(/\d/g, '');
+        const noteLetter = raw === 'B' ? 'H' : raw;
 
         return (
           <div
