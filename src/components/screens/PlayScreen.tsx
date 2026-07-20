@@ -6,7 +6,6 @@ import { useAudioFeedback } from '../../hooks/useAudioFeedback';
 import { NoteWaterfall } from '../music/NoteWaterfall';
 import { PianoKeyboard } from '../music/PianoKeyboard';
 import { MicFeedbackBar } from '../feedback/MicFeedbackBar';
-import { CorrectFlash } from '../feedback/CorrectFlash';
 import { ProgressDots } from '../feedback/ProgressDots';
 import { getSongKeyRange } from '../../utils/songRange';
 
@@ -22,11 +21,10 @@ export function PlayScreen({ song, onBack, onComplete }: PlayScreenProps) {
 
   const { detectedPitch, isListening, permissionDenied, startListening, stopListening } =
     usePitchDetection();
-  const { playCorrect } = useAudioFeedback();
+  useAudioFeedback();
   const { currentNoteIndex, feedback, isComplete, start, reset } = useGameLogic(
     song,
-    gameStarted ? detectedPitch : null,
-    playCorrect
+    gameStarted ? detectedPitch : null
   );
 
   useEffect(() => {
@@ -126,7 +124,6 @@ export function PlayScreen({ song, onBack, onComplete }: PlayScreenProps) {
         </div>
       )}
 
-      <CorrectFlash show={feedback === 'correct'} />
     </div>
   );
 }

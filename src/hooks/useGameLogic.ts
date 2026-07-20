@@ -69,12 +69,8 @@ export function useGameLogic(
 
     if (detected === expected && centsOk) {
       processingRef.current = true;
-      setFeedback('correct');
-      onNoteCorrect?.();
-      feedbackTimerRef.current = setTimeout(() => {
-        setFeedback('idle');
-        advanceToIndex(idx + 1);
-      }, 600);
+      setFeedback('idle');
+      advanceToIndex(idx + 1);
     } else if (detected !== expected) {
       clearTimeout(feedbackTimerRef.current);
       setFeedback('wrong');

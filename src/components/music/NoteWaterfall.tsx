@@ -12,14 +12,18 @@ interface NoteWaterfallProps {
 }
 
 const LOOKAHEAD = 10;
+// Current note takes up more space at the bottom
+const CURRENT_HEIGHT_PCT = 14;
+const UPCOMING_AREA_PCT = 72;
+const UPCOMING_COUNT = LOOKAHEAD - 1;
 
 export function NoteWaterfall({ song, currentNoteIndex, feedback, keyRange }: NoteWaterfallProps) {
   const { minWi, visibleCount } = keyRange;
   const wkPct = 100 / visibleCount;
   const bkPct = wkPct * 0.58;
   const upcoming = song.notes.slice(currentNoteIndex, currentNoteIndex + LOOKAHEAD);
-  const rowPct = 88 / LOOKAHEAD;
-  const blockHeightPct = rowPct * 0.88;
+  const rowPct = UPCOMING_AREA_PCT / UPCOMING_COUNT;
+  const blockHeightPct = rowPct * 0.85;
   const fontSizeVw = Math.min(wkPct * 0.55, 6);
 
   return (
@@ -51,27 +55,30 @@ export function NoteWaterfall({ song, currentNoteIndex, feedback, keyRange }: No
           ? (relativeWi + 1) * wkPct - bkPct / 2
           : relativeWi * wkPct + 0.3;
         const widthPct = isBlack ? bkPct : wkPct - 0.6;
-        const bottomPct = idx * rowPct;
+
+        // Current note sits at bottom with more height; upcoming notes stack above
+        const bottomPct = isCurrent ? 0 : CURRENT_HEIGHT_PCT + (idx - 1) * rowPct;
+        const heightPct = isCurrent ? CURRENT_HEIGHT_PCT - 1 : blockHeightPct;
+
         const noteLetter = event.note.replace(/[#\d]/g, '');
         const isSharp = event.note.includes('#');
+        const currentFontVw = Math.min(wkPct * 0.9, 10);
 
         return (
           <div
             key={`${currentNoteIndex + idx}-${event.note}`}
-            className="absolute rounded-xl flex items-center justify-center transition-all duration-150"
+            className={`absolute flex items-center justify-center transition-all duration-150 ${isCurrent ? 'rounded-t-xl' : 'rounded-xl'}`}
             style={{
               left: `${leftPct}%`,
               width: `${widthPct}%`,
               bottom: `${bottomPct}%`,
-              height: `${blockHeightPct}%`,
+              height: `${heightPct}%`,
               backgroundColor: color,
-              opacity: isCurrent ? 1 : Math.max(0.65, 1 - idx * 0.04),
+              opacity: isCurrent ? 1 : Math.max(0.6, 1 - idx * 0.06),
               boxShadow: isCurrent
-                ? `0 0 28px 10px ${color}99, 0 0 12px 4px ${color}`
-                : `0 0 8px 2px ${color}66`,
-              outline: isCurrent && feedback === 'correct'
-                ? '3px solid #22c55e'
-                : isCurrent && feedback === 'wrong'
+                ? `0 0 32px 12px ${color}aa, 0 0 16px 6px ${color}`
+                : `0 0 6px 2px ${color}55`,
+              outline: isCurrent && feedback === 'wrong'
                 ? '3px solid #ef4444'
                 : undefined,
               zIndex: isBlack ? 2 : 1,
@@ -80,9 +87,9 @@ export function NoteWaterfall({ song, currentNoteIndex, feedback, keyRange }: No
             <span
               className="font-black text-white select-none pointer-events-none"
               style={{
-                fontSize: `${fontSizeVw}vw`,
+                fontSize: isCurrent ? `${currentFontVw}vw` : `${fontSizeVw}vw`,
                 lineHeight: 1,
-                textShadow: '0 1px 4px rgba(0,0,0,0.8)',
+                textShadow: '0 1px 6px rgba(0,0,0,0.9)',
               }}
             >
               {isSharp ? '♯' : noteLetter}
