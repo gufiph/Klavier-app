@@ -3,7 +3,6 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - claude/piano-learning-app-kids-thejbz
       - main
   workflow_dispatch:
 
