@@ -15,7 +15,8 @@ interface UseGameLogicResult {
 export function useGameLogic(
   song: Song | null,
   detectedPitch: DetectedPitch | null,
-  onNoteCorrect?: () => void
+  onNoteCorrect?: () => void,
+  tempoMultiplier = 1
 ): UseGameLogicResult {
   const [currentNoteIndex, setCurrentNoteIndex] = useState(0);
   const [feedback, setFeedback] = useState<FeedbackState>('idle');
@@ -32,8 +33,8 @@ export function useGameLogic(
 
   const beatDurationMs = useCallback((duration: string, tempo: number) => {
     const beats: Record<string, number> = { whole: 4, half: 2, quarter: 1, eighth: 0.5 };
-    return ((60 / tempo) * (beats[duration] ?? 1)) * 1000;
-  }, []);
+    return ((60 / (tempo * tempoMultiplier)) * (beats[duration] ?? 1)) * 1000;
+  }, [tempoMultiplier]);
 
   const advanceToIndex = useCallback((index: number) => {
     const s = songRef.current;

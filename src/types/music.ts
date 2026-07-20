@@ -22,4 +22,5 @@ export interface Song {
   timeSignature: [number, number];
   coverEmoji: string;
   notes: NoteEvent[];
+  category?: string;
 }

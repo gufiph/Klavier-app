@@ -15,7 +15,7 @@ export const modernSongs: Song[] = [
     id: 'baby-shark',
     title: 'Baby Shark',
     subtitle: 'PinkFong',
-    difficulty: 1, tempo: 118, timeSignature: [4, 4], coverEmoji: '🦈',
+    difficulty: 1, tempo: 118, timeSignature: [4, 4], coverEmoji: '🦈', category: 'Kinder',
     notes: [
       q('G4','Ba-'), q('A4','by'), h('B4','Shark!'),
       e('D5','doo'), e('D5','doo'), e('D5','doo'), e('D5','doo'), e('D5','doo'), e('D5','doo'), h('B4'),
@@ -31,7 +31,7 @@ export const modernSongs: Song[] = [
     id: 'happy-birthday',
     title: 'Happy Birthday',
     subtitle: 'Alles Gute zum Geburtstag!',
-    difficulty: 1, tempo: 88, timeSignature: [3, 4], coverEmoji: '🎂',
+    difficulty: 1, tempo: 88, timeSignature: [3, 4], coverEmoji: '🎂', category: 'Kinder',
     notes: [
       q('G3','Hap-'), q('G3','py'), q('A3','Birth-'),
       q('G3','day'), q('C4','to'), h('B3','you,'),
@@ -48,7 +48,7 @@ export const modernSongs: Song[] = [
     id: 'whole-new-world',
     title: 'A Whole New World',
     subtitle: 'Aladdin · Walt Disney',
-    difficulty: 1, tempo: 82, timeSignature: [4, 4], coverEmoji: '🧞',
+    difficulty: 1, tempo: 82, timeSignature: [4, 4], coverEmoji: '🧞', category: 'Disney',
     notes: [
       q('A4','A'), q('A4','whole'), q('A4','new'), h('B4','world,'),
       q('A4','a'), q('G4','daz-'), q('F#4','zling'), h('A4','place'),
@@ -64,7 +64,7 @@ export const modernSongs: Song[] = [
     id: 'under-the-sea',
     title: 'Under the Sea',
     subtitle: 'Arielle · Walt Disney',
-    difficulty: 1, tempo: 116, timeSignature: [4, 4], coverEmoji: '🐠',
+    difficulty: 1, tempo: 116, timeSignature: [4, 4], coverEmoji: '🐠', category: 'Disney',
     notes: [
       q('G4','Un-'), q('A4','der'), q('G4','the'), h('F#4','sea,'),
       q('G4','un-'), q('A4','der'), q('G4','the'), h('F#4','sea!'),
@@ -81,7 +81,7 @@ export const modernSongs: Song[] = [
     id: 'build-a-snowman',
     title: 'Do You Want to Build a Snowman?',
     subtitle: 'Frozen · Walt Disney',
-    difficulty: 1, tempo: 95, timeSignature: [4, 4], coverEmoji: '☃️',
+    difficulty: 1, tempo: 95, timeSignature: [4, 4], coverEmoji: '☃️', category: 'Disney',
     notes: [
       q('C4','Do'), q('D4','you'), q('E4','want'), q('F4','to'),
       q('G4','build'), q('A4','a'), q('G4','snow-'), h('E4','man?'),
@@ -98,7 +98,7 @@ export const modernSongs: Song[] = [
     id: 'remember-me-coco',
     title: 'Remember Me',
     subtitle: 'Coco · Pixar',
-    difficulty: 1, tempo: 80, timeSignature: [4, 4], coverEmoji: '🌺',
+    difficulty: 1, tempo: 80, timeSignature: [4, 4], coverEmoji: '🌺', category: 'Disney',
     notes: [
       q('G4','Re-'), q('G4','mem-'), q('B4','ber'), h('A4','me,'),
       q('G4','though'), q('F#4','I'), q('E4','have'), h('D4','to'),
@@ -117,7 +117,7 @@ export const modernSongs: Song[] = [
     id: 'you-got-a-friend',
     title: 'You\'ve Got a Friend in Me',
     subtitle: 'Toy Story · Randy Newman',
-    difficulty: 1, tempo: 112, timeSignature: [4, 4], coverEmoji: '🤠',
+    difficulty: 1, tempo: 112, timeSignature: [4, 4], coverEmoji: '🤠', category: 'Disney',
     notes: [
       q('B3','You\'ve'), q('B3','got'), q('B3','a'), q('D4','friend'),
       q('G3','in'), q('A3','me,'), h('B3'),
@@ -138,7 +138,7 @@ export const modernSongs: Song[] = [
     id: 'how-far-ill-go',
     title: 'How Far I\'ll Go',
     subtitle: 'Moana · Auli\'i Cravalho',
-    difficulty: 1, tempo: 100, timeSignature: [4, 4], coverEmoji: '🌊',
+    difficulty: 1, tempo: 100, timeSignature: [4, 4], coverEmoji: '🌊', category: 'Disney',
     notes: [
       q('C4','I\'ve'), q('C4','been'), q('D4','star-'), q('E4','ing'),
       q('D4','at'), q('E4','the'), q('D4','edge'), q('C4','of'),
@@ -163,7 +163,7 @@ export const modernSongs: Song[] = [
     id: 'let-it-go',
     title: 'Let It Go',
     subtitle: 'Frozen · Idina Menzel',
-    difficulty: 2, tempo: 88, timeSignature: [4, 4], coverEmoji: '❄️',
+    difficulty: 2, tempo: 88, timeSignature: [4, 4], coverEmoji: '❄️', category: 'Disney',
     notes: [
       // Chorus
       q('F4'), q('G4'), h('A4'),
@@ -188,7 +188,7 @@ export const modernSongs: Song[] = [
     id: 'we-dont-talk-about-bruno',
     title: 'We Don\'t Talk About Bruno',
     subtitle: 'Encanto · Lin-Manuel Miranda',
-    difficulty: 2, tempo: 108, timeSignature: [4, 4], coverEmoji: '🕯️',
+    difficulty: 2, tempo: 108, timeSignature: [4, 4], coverEmoji: '🕯️', category: 'Disney',
     notes: [
       // "We don't talk about Bruno no no no..."
       e('G4'), e('G4'), e('F4'), e('G4'), e('F4'), e('D4'), q('D4'),
@@ -210,7 +210,7 @@ export const modernSongs: Song[] = [
     id: 'surface-pressure',
     title: 'Surface Pressure',
     subtitle: 'Encanto · Jessica Darrow',
-    difficulty: 2, tempo: 122, timeSignature: [4, 4], coverEmoji: '💪',
+    difficulty: 2, tempo: 122, timeSignature: [4, 4], coverEmoji: '💪', category: 'Disney',
     notes: [
       // "Under the surface I hide my nerves and it shows"
       e('D5'), e('D5'), e('C5'), e('A#4'), e('A4'), e('A#4'), e('A4'), e('G4'),
@@ -229,7 +229,7 @@ export const modernSongs: Song[] = [
     id: 'what-was-i-made-for',
     title: 'What Was I Made For?',
     subtitle: 'Barbie · Billie Eilish',
-    difficulty: 2, tempo: 80, timeSignature: [4, 4], coverEmoji: '🎀',
+    difficulty: 2, tempo: 80, timeSignature: [4, 4], coverEmoji: '🎀', category: 'Pop',
     notes: [
       // "I used to float, now I just fall down..."
       q('G4'), q('A4'), q('A#4'), q('C5'),
@@ -252,7 +252,7 @@ export const modernSongs: Song[] = [
     id: 'drivers-license',
     title: 'Drivers License',
     subtitle: 'Olivia Rodrigo',
-    difficulty: 2, tempo: 78, timeSignature: [4, 4], coverEmoji: '🚗',
+    difficulty: 2, tempo: 78, timeSignature: [4, 4], coverEmoji: '🚗', category: 'Pop',
     notes: [
       // Verse
       q('C4'), q('D4'), q('E4'), q('F4'),
@@ -279,7 +279,7 @@ export const modernSongs: Song[] = [
     id: 'blinding-lights',
     title: 'Blinding Lights',
     subtitle: 'The Weeknd',
-    difficulty: 2, tempo: 100, timeSignature: [4, 4], coverEmoji: '🌃',
+    difficulty: 2, tempo: 100, timeSignature: [4, 4], coverEmoji: '🌃', category: 'Pop',
     notes: [
       // Main synth riff (simplified)
       e('E5'), e('D5'), q('C5'), q('B4'),
@@ -302,7 +302,7 @@ export const modernSongs: Song[] = [
     id: 'city-of-stars',
     title: 'City of Stars',
     subtitle: 'La La Land · Ryan Gosling & Emma Stone',
-    difficulty: 2, tempo: 76, timeSignature: [3, 4], coverEmoji: '⭐',
+    difficulty: 2, tempo: 76, timeSignature: [3, 4], coverEmoji: '⭐', category: 'Film',
     notes: [
       // "City of stars, are you shining just for me?"
       q('G4'), q('A4'), q('B4'),
@@ -337,7 +337,7 @@ export const modernSongs: Song[] = [
     id: 'shallow',
     title: 'Shallow',
     subtitle: 'A Star Is Born · Lady Gaga & Bradley Cooper',
-    difficulty: 2, tempo: 96, timeSignature: [4, 4], coverEmoji: '🎤',
+    difficulty: 2, tempo: 96, timeSignature: [4, 4], coverEmoji: '🎤', category: 'Film',
     notes: [
       // Verse: "Tell me somethin' girl..."
       q('A4'), q('A4'), q('A4'), q('G4'),
@@ -374,7 +374,7 @@ export const modernSongs: Song[] = [
     id: 'all-of-me',
     title: 'All of Me',
     subtitle: 'John Legend',
-    difficulty: 3, tempo: 63, timeSignature: [4, 4], coverEmoji: '💍',
+    difficulty: 3, tempo: 63, timeSignature: [4, 4], coverEmoji: '💍', category: 'Pop',
     notes: [
       // Verse: "What would I do without your smart mouth..."
       q('A#3'), q('C4'), q('D4'), q('D#4'),
@@ -409,7 +409,7 @@ export const modernSongs: Song[] = [
     id: 'a-thousand-years',
     title: 'A Thousand Years',
     subtitle: 'Christina Perri · Twilight',
-    difficulty: 3, tempo: 92, timeSignature: [3, 4], coverEmoji: '🌹',
+    difficulty: 3, tempo: 92, timeSignature: [3, 4], coverEmoji: '🌹', category: 'Film',
     notes: [
       // "Heart beats fast, colors and promises..."
       q('E4'), q('E4'), q('F#4'),
@@ -449,7 +449,7 @@ export const modernSongs: Song[] = [
     id: 'amelie-comptine',
     title: 'Comptine d\'un autre été',
     subtitle: 'Yann Tiersen · Amélie',
-    difficulty: 3, tempo: 78, timeSignature: [4, 4], coverEmoji: '🗼',
+    difficulty: 3, tempo: 78, timeSignature: [4, 4], coverEmoji: '🗼', category: 'Film',
     notes: [
       // Main theme
       e('E4'), e('G4'), e('A4'), e('C5'), e('B4'), e('A4'), q('G4'),
@@ -477,7 +477,7 @@ export const modernSongs: Song[] = [
     id: 'interstellar',
     title: 'Interstellar – Main Theme',
     subtitle: 'Hans Zimmer',
-    difficulty: 3, tempo: 52, timeSignature: [4, 4], coverEmoji: '🚀',
+    difficulty: 3, tempo: 52, timeSignature: [4, 4], coverEmoji: '🚀', category: 'Film',
     notes: [
       // Haunting minimal theme
       h('A3'), h('C4'),
@@ -511,7 +511,7 @@ export const modernSongs: Song[] = [
     id: 'perfect-ed-sheeran',
     title: 'Perfect',
     subtitle: 'Ed Sheeran',
-    difficulty: 3, tempo: 96, timeSignature: [3, 4], coverEmoji: '💑',
+    difficulty: 3, tempo: 96, timeSignature: [3, 4], coverEmoji: '💑', category: 'Pop',
     notes: [
       // Verse: "I found a love for me..."
       q('C4'), q('F4'), q('G4'),
@@ -553,7 +553,7 @@ export const modernSongs: Song[] = [
     id: 'someone-like-you',
     title: 'Someone Like You',
     subtitle: 'Adele',
-    difficulty: 3, tempo: 68, timeSignature: [4, 4], coverEmoji: '💔',
+    difficulty: 3, tempo: 68, timeSignature: [4, 4], coverEmoji: '💔', category: 'Pop',
     notes: [
       // Verse: "I heard that you're settled down..."
       q('A3'), q('C#4'), q('E4'), q('A4'),
@@ -587,7 +587,7 @@ export const modernSongs: Song[] = [
     id: 'la-vie-en-rose',
     title: 'La Vie en Rose',
     subtitle: 'Édith Piaf',
-    difficulty: 3, tempo: 75, timeSignature: [4, 4], coverEmoji: '🌹',
+    difficulty: 3, tempo: 75, timeSignature: [4, 4], coverEmoji: '🌹', category: 'Film',
     notes: [
       // Main melody in F major
       q('C4'), q('D4'), q('E4'), q('F4'),
