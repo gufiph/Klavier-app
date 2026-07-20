@@ -11,111 +11,77 @@ Das Kind spielt auf einem echten Klavier — das Mikrofon erkennt die gespielten
 - 🎨 **Boomwhacker-Farben** — dieselben Farben wie die Aufkleber auf den Tasten
 - 🎤 **Mikrofon-Erkennung** — die App hört, ob die richtige Note gespielt wurde
 - 🌊 **Wasserfall-Ansicht** — bunte Blöcke zeigen, welche Taste als nächstes dran ist
-- 📱 **PWA** — kann auf dem iPad als App installiert werden (offline nutzbar)
+- 📱 **PWA** — kann auf dem iPad / Handy als App installiert werden (offline nutzbar)
 - 🇩🇪 Auf Deutsch
 
 ---
 
-## Voraussetzungen
+## Auf dem iPad oder Handy benutzen
 
-- [Node.js](https://nodejs.org/) Version 18 oder neuer
-- Ein Mikrofon (eingebaut oder extern)
-- **Für Desktop-App:** Windows, macOS oder Linux
-- **Für iPad:** Safari-Browser im selben WLAN
+### Schritt 1 — App online abrufen
+
+Die App läuft unter:  
+**https://gufiph.github.io/klavier-app/**
+
+> Wird automatisch aktualisiert, wenn neue Lieder hinzugefügt werden.
+
+### Schritt 2 — Als App installieren (einmalig)
+
+**iPad / iPhone (Safari):**
+1. Seite im **Safari** öffnen
+2. Auf das **Teilen-Symbol** tippen (Rechteck mit Pfeil)
+3. **„Zum Home-Bildschirm"** wählen
+4. Die App erscheint wie eine normale App — auch **offline nutzbar**
+
+**Android (Chrome):**
+1. Seite in **Chrome** öffnen
+2. Menü (⋮) → **„App installieren"** oder **„Zum Startbildschirm hinzufügen"**
+3. Fertig
+
+### Schritt 3 — Mikrofon erlauben
+
+Beim ersten Start fragt die App nach dem Mikrofon → **Erlauben** tippen.
 
 ---
 
-## Installation
+## GitHub Pages aktivieren (einmalig, nur für den Admin)
 
-### 1. Repository herunterladen
+Damit die URL oben funktioniert, muss GitHub Pages einmal aktiviert werden:
+
+1. Auf GitHub → Repository **klavier-app** öffnen
+2. **Settings** → **Pages**
+3. Bei „Source": **GitHub Actions** auswählen
+4. Speichern
+
+Danach deployt die App automatisch bei jedem Push auf den Branch.
+
+---
+
+## Lokal entwickeln (optional)
+
+### Voraussetzungen
+
+- [Node.js](https://nodejs.org/) Version 18 oder neuer
+
+### Installation und Start
 
 ```bash
 git clone https://github.com/gufiph/klavier-app.git
 cd klavier-app
 git checkout claude/piano-learning-app-kids-thejbz
-```
-
-### 2. Abhängigkeiten installieren
-
-```bash
 npm install
-```
-
----
-
-## Option A: Desktop-App (kein Browser, kein Server nötig)
-
-Die App läuft als eigenständiges Programm — kein Browser, kein Server, kein Docker.  
-Das Mikrofon wird automatisch freigegeben, keine Browser-Popups.
-
-### Im Entwicklungsmodus starten (zum Testen)
-
-```bash
-npm run electron:dev
-```
-
-### Installierbare .exe / .dmg / AppImage bauen
-
-**Windows (.exe Installer):**
-```bash
-npm run electron:build:win
-```
-
-**macOS (.dmg):**
-```bash
-npm run electron:build:mac
-```
-
-**Linux (.AppImage):**
-```bash
-npm run electron:build:linux
-```
-
-Die fertige Installationsdatei liegt im Ordner `release/`.  
-Einfach ausführen — die App ist danach wie ein normales Programm installiert.
-
----
-
-## Option B: Im Browser starten (Entwicklung / iPad)
-
-```bash
 npm run dev
 ```
 
 Die App ist dann erreichbar unter: **http://localhost:5173**
 
-Für den Zugriff vom iPad im selben WLAN:
+Für den Zugriff vom iPad / Handy im selben WLAN:
 
 ```bash
 npm run dev -- --host
 ```
 
-Dann die angezeigte Netzwerk-Adresse (z.B. `http://192.168.1.100:5173`) im iPad-Browser öffnen.
-
----
-
-## Auf dem iPad installieren (PWA)
-
-1. App im **Safari** auf dem iPad öffnen
-2. Auf das **Teilen-Symbol** tippen (Rechteck mit Pfeil nach oben)
-3. **„Zum Home-Bildschirm"** auswählen
-4. Die App erscheint jetzt wie eine normale App auf dem iPad — auch offline nutzbar
-
----
-
-## Produktions-Build (nur Web)
-
-```bash
-npm run build
-```
-
-Die fertige App liegt im Ordner `dist/` und kann auf jedem Webserver gehostet werden.
-
-Build lokal testen:
-
-```bash
-npm run preview
-```
+Dann die angezeigte Netzwerk-Adresse (z.B. `http://192.168.1.100:5173`) im Safari / Chrome öffnen.
 
 ---
 
@@ -140,7 +106,7 @@ npm run preview
 },
 ```
 
-3. Speichern — das Lied erscheint sofort in der App.
+3. Speichern und pushen — die App aktualisiert sich automatisch.
 
 **Verfügbare Noten:** C3 bis C6  
 **Vorzeichen:** `C#4` = Cis, `D#4` = Dis, `F#4` = Fis, `G#4` = Gis, `A#4` = Ais
@@ -202,7 +168,7 @@ Empfohlen für Anfänger: **C4 bis G4** (mittlere Oktave, nur weiße Tasten).
 | Pitch-Erkennung | [pitchy](https://github.com/ianprime0509/pitchy) v4 (McLeod Pitch Method) |
 | Styling | Tailwind CSS v3 |
 | PWA | vite-plugin-pwa + Workbox autoUpdate |
-| Desktop-App | Electron 32 + electron-builder |
+| Hosting | GitHub Pages (kostenlos, automatisch) |
 | Song-Daten | TypeScript-Module (typsicher, IDE-Autovervollständigung) |
 
 ---

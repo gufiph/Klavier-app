@@ -3,15 +3,10 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview",
-    "electron:dev": "npm run build && electron .",
-    "electron:build:win": "npm run build && electron-builder --win",
-    "electron:build:mac": "npm run build && electron-builder --mac",
-    "electron:build:linux": "npm run build && electron-builder --linux"
+    "preview": "vite preview"
   },
   "dependencies": {
     "pitchy": "^4.1.0",
@@ -23,37 +18,10 @@
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.20",
-    "electron": "^32.0.0",
-    "electron-builder": "^25.0.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
     "typescript": "^5.6.2",
     "vite": "^5.4.9",
     "vite-plugin-pwa": "^0.21.1"
-  },
-  "build": {
-    "appId": "com.family.klavier-app",
-    "productName": "Klavier-App",
-    "files": [
-      "dist/**/*",
-      "electron/main.cjs"
-    ],
-    "directories": {
-      "output": "release"
-    },
-    "win": {
-      "target": [{ "target": "nsis", "arch": ["x64"] }],
-      "icon": "public/icon.svg"
-    },
-    "mac": {
-      "target": [{ "target": "dmg", "arch": ["x64", "arm64"] }],
-      "icon": "public/icon.svg",
-      "category": "public.app-category.education"
-    },
-    "linux": {
-      "target": [{ "target": "AppImage", "arch": ["x64"] }],
-      "icon": "public/icon.svg",
-      "category": "Education"
-    }
   }
 }
