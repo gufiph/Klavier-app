@@ -59,3 +59,13 @@ body {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+@keyframes confetti-fall {
+  0%   { transform: translateY(-5vh) rotate(0deg) scale(1); opacity: 1; }
+  70%  { opacity: 0.9; }
+  100% { transform: translateY(110vh) rotate(600deg) scale(0.7); opacity: 0; }
+}
+
+.animate-confetti {
+  animation: confetti-fall linear infinite;
+}

@@ -1,14 +1,16 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import type { Song } from '../../types/music';
 import { usePitchDetection } from '../../hooks/usePitchDetection';
 import { useGameLogic } from '../../hooks/useGameLogic';
 import { useAudioFeedback } from '../../hooks/useAudioFeedback';
 import { NoteWaterfall } from '../music/NoteWaterfall';
+import { SheetMusicView } from '../music/SheetMusicView';
 import { PianoKeyboard } from '../music/PianoKeyboard';
 import { MicFeedbackBar } from '../feedback/MicFeedbackBar';
 import { CorrectFlash } from '../feedback/CorrectFlash';
 import { ProgressDots } from '../feedback/ProgressDots';
-import { getSongKeyRange } from '../../utils/songRange';
+
+type ViewMode = 'waterfall' | 'sheet';
 
 interface PlayScreenProps {
   song: Song;
@@ -16,8 +18,12 @@ interface PlayScreenProps {
   onComplete: () => void;
 }
 
+const DIFF_DOT_COLOR = ['', '#22c55e', '#f59e0b', '#ef4444'];
+
 export function PlayScreen({ song, onBack, onComplete }: PlayScreenProps) {
   const [gameStarted, setGameStarted] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('waterfall');
+  const [coloredNotes, setColoredNotes] = useState(true);
   const audioCtxRef = useRef<AudioContext | null>(null);
 
   const { detectedPitch, isListening, permissionDenied, startListening, stopListening } =
@@ -53,84 +59,128 @@ export function PlayScreen({ song, onBack, onComplete }: PlayScreenProps) {
     onBack();
   }, [stopListening, reset, onBack]);
 
-  const keyRange = useMemo(() => getSongKeyRange(song), [song]);
   const nonRestCount = song.notes.filter(n => !n.rest).length;
   const completedCount = song.notes.slice(0, currentNoteIndex).filter(n => !n.rest).length;
   const currentNote = song.notes[currentNoteIndex];
   const expectedNote = currentNote && !currentNote.rest ? currentNote.note : null;
+  const diffColor = DIFF_DOT_COLOR[song.difficulty] ?? '#6b7280';
 
   return (
-    <div className="relative flex flex-col h-[100dvh] bg-gray-950 text-white overflow-hidden
-                    landscape:flex-row landscape:items-stretch">
-      {/* Header — portrait: top bar | landscape: left side strip */}
-      <div className="flex items-center px-3 py-2 bg-gray-900 border-b border-gray-800
-                      flex-shrink-0 landscape:flex-col landscape:border-b-0 landscape:border-r
-                      landscape:py-4 landscape:px-2 landscape:gap-3 landscape:w-12 landscape:justify-start">
+    <div className="relative flex flex-col h-[100dvh] bg-gray-950 text-white overflow-hidden">
+
+      {/* Header — always horizontal bar, portrait and landscape */}
+      <div className="flex items-center gap-2 px-3 py-2 bg-gray-900/95 border-b border-gray-800 flex-shrink-0">
         <button
           onClick={handleBack}
-          className="text-xl p-1 rounded-lg active:bg-gray-700 flex-shrink-0"
+          className="text-xl p-1.5 rounded-xl hover:bg-gray-800 active:bg-gray-700 flex-shrink-0 transition-colors"
         >
           ◄
         </button>
-        <span className="text-lg font-bold truncate landscape:hidden">
-          {song.coverEmoji} {song.title}
-        </span>
-        <span className="hidden landscape:block text-xl">{song.coverEmoji}</span>
+
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <span className="text-xl flex-shrink-0">{song.coverEmoji}</span>
+          <span className="text-sm font-bold truncate">{song.title}</span>
+          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: diffColor }} />
+        </div>
+
+        {/* View mode switcher */}
+        <div className="flex items-center gap-0.5 bg-gray-800 rounded-xl p-1 flex-shrink-0">
+          <button
+            onClick={() => setViewMode('waterfall')}
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors ${
+              viewMode === 'waterfall' ? 'bg-gray-600 text-white shadow' : 'text-gray-400 hover:text-white'
+            }`}
+            title="Wasserfall"
+          >
+            ⬇
+          </button>
+          <button
+            onClick={() => setViewMode('sheet')}
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors ${
+              viewMode === 'sheet' ? 'bg-gray-600 text-white shadow' : 'text-gray-400 hover:text-white'
+            }`}
+            title="Noten"
+          >
+            𝄞
+          </button>
+        </div>
+
+        {/* Color toggle — only visible in sheet mode */}
+        {viewMode === 'sheet' && (
+          <button
+            onClick={() => setColoredNotes(c => !c)}
+            className={`p-1.5 rounded-xl text-sm transition-colors flex-shrink-0 border ${
+              coloredNotes
+                ? 'bg-purple-700/80 border-purple-600 text-white'
+                : 'bg-gray-800 border-gray-700 text-gray-400'
+            }`}
+            title={coloredNotes ? 'Farben an' : 'Farben aus'}
+          >
+            🎨
+          </button>
+        )}
       </div>
 
-      {/* Main area — portrait: full width column | landscape: row */}
-      <div className="flex flex-col flex-1 min-h-0 min-w-0
-                      landscape:flex-row landscape:flex-1">
-
-        {/* Waterfall — portrait: takes remaining height | landscape: left column */}
-        <div className="flex-1 min-h-0 min-w-0 landscape:flex-1">
+      {/* Main view — waterfall or sheet music. flex-1 so keyboard stays at bottom */}
+      <div className="flex-1 min-h-0">
+        {viewMode === 'waterfall' ? (
           <NoteWaterfall
             song={song}
             currentNoteIndex={currentNoteIndex}
             feedback={feedback}
-            keyRange={keyRange}
           />
-        </div>
-
-        {/* Right column in landscape: keyboard + mic + progress */}
-        <div className="flex flex-col flex-shrink-0
-                        landscape:w-2/5 landscape:border-l landscape:border-gray-800">
-
-          {/* Mic bar */}
-          <MicFeedbackBar detectedPitch={detectedPitch} isListening={isListening} />
-
-          {/* Piano keyboard */}
-          <div className="h-32 sm:h-40 landscape:h-full landscape:flex-1 px-1 pb-1 flex-shrink-0">
-            <PianoKeyboard
-              expectedNote={expectedNote}
-              detectedNote={detectedPitch?.noteName ?? null}
-              feedback={feedback}
-              keyRange={keyRange}
-            />
-          </div>
-
-          {/* Progress */}
-          <ProgressDots current={completedCount} total={nonRestCount} />
-        </div>
+        ) : (
+          <SheetMusicView
+            song={song}
+            currentNoteIndex={currentNoteIndex}
+            feedback={feedback}
+            coloredNotes={coloredNotes}
+          />
+        )}
       </div>
+
+      {/* Mic feedback */}
+      <MicFeedbackBar detectedPitch={detectedPitch} isListening={isListening} />
+
+      {/* Piano keyboard — landscape:h-44 gives more key height in landscape */}
+      <div className="h-36 landscape:h-44 flex-shrink-0 px-1 pb-1">
+        <PianoKeyboard
+          expectedNote={expectedNote}
+          detectedNote={detectedPitch?.noteName ?? null}
+          feedback={feedback}
+        />
+      </div>
+
+      {/* Progress */}
+      <ProgressDots current={completedCount} total={nonRestCount} />
 
       {/* Start overlay */}
       {!gameStarted && (
-        <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50">
-          <div className="text-center p-8 max-w-xs">
-            <div className="text-7xl mb-4">{song.coverEmoji}</div>
-            <h2 className="text-3xl font-bold mb-1">{song.title}</h2>
+        <div
+          className="absolute inset-0 flex items-center justify-center z-50"
+          style={{ background: 'rgba(3,7,18,0.88)', backdropFilter: 'blur(8px)' }}
+        >
+          <div className="text-center p-8 max-w-xs w-full">
+            <div
+              className="text-7xl mb-5 inline-block"
+              style={{ filter: 'drop-shadow(0 0 24px rgba(255,255,255,0.15))' }}
+            >
+              {song.coverEmoji}
+            </div>
+            <h2 className="text-3xl font-black tracking-tight mb-1">{song.title}</h2>
             {song.subtitle && (
               <p className="text-gray-400 mb-6 text-sm">{song.subtitle}</p>
             )}
             {permissionDenied ? (
               <>
-                <p className="text-red-400 mb-4 text-sm">
-                  🎤 Mikrofon nicht erlaubt. Bitte Zugriff in den Browser-Einstellungen gewähren.
-                </p>
+                <div className="bg-red-950/80 border border-red-800 rounded-2xl p-4 mb-5">
+                  <p className="text-red-300 text-sm leading-snug">
+                    🎤 Mikrofon nicht erlaubt. Bitte Zugriff in den Browser-Einstellungen gewähren.
+                  </p>
+                </div>
                 <button
                   onClick={handleStart}
-                  className="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-2xl text-xl font-bold"
+                  className="w-full bg-blue-600 hover:bg-blue-500 active:scale-95 px-6 py-4 rounded-2xl text-lg font-bold transition-transform"
                 >
                   Nochmal versuchen
                 </button>
@@ -138,7 +188,8 @@ export function PlayScreen({ song, onBack, onComplete }: PlayScreenProps) {
             ) : (
               <button
                 onClick={handleStart}
-                className="bg-green-500 hover:bg-green-400 active:scale-95 px-10 py-5 rounded-3xl text-2xl font-bold transition-transform"
+                className="w-full bg-gradient-to-b from-green-400 to-green-600 hover:from-green-300 hover:to-green-500 active:scale-95 px-10 py-5 rounded-3xl text-2xl font-black transition-transform"
+                style={{ boxShadow: '0 0 30px rgba(34,197,94,0.35), 0 4px 15px rgba(0,0,0,0.5)' }}
               >
                 🎵 Spielen!
               </button>
