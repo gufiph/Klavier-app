@@ -17,12 +17,11 @@ type LayoutMode = 'portrait' | 'landscape';
 interface PlayScreenProps {
   song: Song;
   onBack: () => void;
-  onComplete: () => void;
+  onComplete: (earnedStars: 1 | 2 | 3) => void;
 }
 
 const DIFF_DOT_COLOR = ['', '#22c55e', '#f59e0b', '#ef4444'];
 
-// Toggle switch for finger hints
 function ToggleSwitch({ on, onChange, label }: { on: boolean; onChange: () => void; label: string }) {
   return (
     <button
@@ -35,7 +34,6 @@ function ToggleSwitch({ on, onChange, label }: { on: boolean; onChange: () => vo
       }}
     >
       <span className="text-sm">👆</span>
-      {/* Visual switch track */}
       <div
         className="relative flex-shrink-0 rounded-full transition-colors"
         style={{ width: 24, height: 13, background: on ? '#7c3aed' : '#4b5563' }}
@@ -56,26 +54,44 @@ export function PlayScreen({ song, onBack, onComplete }: PlayScreenProps) {
   const [layout, setLayout] = useState<LayoutMode>('portrait');
   const [tempoMult, setTempoMult] = useState(1.0);
   const [showFingers, setShowFingers] = useState(false);
+  const [hintLevel, setHintLevel] = useState<0 | 1 | 2>(0);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const hint1Ref = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const hint2Ref = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const { markComplete } = useProgress();
   const { detectedPitch, isListening, permissionDenied, startListening, stopListening } =
     usePitchDetection();
   useAudioFeedback();
-  const { currentNoteIndex, feedback, isComplete, start, reset } = useGameLogic(
+  const { currentNoteIndex, feedback, isComplete, wrongCount, start, reset } = useGameLogic(
     song,
     gameStarted ? detectedPitch : null,
     undefined,
     tempoMult
   );
 
+  // Reset hint timers whenever the note advances
+  useEffect(() => {
+    if (!gameStarted) return;
+    clearTimeout(hint1Ref.current);
+    clearTimeout(hint2Ref.current);
+    setHintLevel(0);
+    hint1Ref.current = setTimeout(() => setHintLevel(1), 3000);
+    hint2Ref.current = setTimeout(() => setHintLevel(2), 7000);
+    return () => {
+      clearTimeout(hint1Ref.current);
+      clearTimeout(hint2Ref.current);
+    };
+  }, [currentNoteIndex, gameStarted]);
+
   useEffect(() => {
     if (isComplete) {
-      markComplete(song.id);
-      const t = setTimeout(() => onComplete(), 800);
+      const earnedStars: 1 | 2 | 3 = wrongCount <= 2 ? 3 : wrongCount <= 8 ? 2 : 1;
+      markComplete(song.id, earnedStars);
+      const t = setTimeout(() => onComplete(earnedStars), 800);
       return () => clearTimeout(t);
     }
-  }, [isComplete, onComplete, markComplete, song.id]);
+  }, [isComplete, onComplete, markComplete, song.id, wrongCount]);
 
   const handleStart = useCallback(async () => {
     if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
@@ -88,6 +104,8 @@ export function PlayScreen({ song, onBack, onComplete }: PlayScreenProps) {
   const handleBack = useCallback(() => {
     stopListening();
     reset();
+    clearTimeout(hint1Ref.current);
+    clearTimeout(hint2Ref.current);
     onBack();
   }, [stopListening, reset, onBack]);
 
@@ -107,7 +125,6 @@ export function PlayScreen({ song, onBack, onComplete }: PlayScreenProps) {
     []
   );
 
-  // Reusable sub-components
   const notesView = (
     <div className="flex-1 min-h-0">
       {viewMode === 'waterfall' ? (
@@ -126,9 +143,7 @@ export function PlayScreen({ song, onBack, onComplete }: PlayScreenProps) {
 
   const micBar = <MicFeedbackBar detectedPitch={detectedPitch} isListening={isListening} />;
 
-  const progressBar = (
-    <ProgressDots current={completedCount} total={nonRestCount} />
-  );
+  const progressBar = <ProgressDots current={completedCount} total={nonRestCount} />;
 
   const keyboard = (
     <PianoKeyboard
@@ -136,6 +151,7 @@ export function PlayScreen({ song, onBack, onComplete }: PlayScreenProps) {
       detectedNote={detectedPitch?.noteName ?? null}
       feedback={feedback}
       showFingerHints={showFingers}
+      hintLevel={hintLevel}
     />
   );
 
@@ -185,7 +201,7 @@ export function PlayScreen({ song, onBack, onComplete }: PlayScreenProps) {
           >🎨</button>
         )}
 
-        {/* Portrait ↕ / Landscape ↔ toggle */}
+        {/* Portrait / Landscape toggle */}
         <button
           onClick={toggleLayout}
           title={isLandscape ? 'Hochformat' : 'Querformat'}
@@ -207,21 +223,19 @@ export function PlayScreen({ song, onBack, onComplete }: PlayScreenProps) {
           {tempoMult < 1 ? '🐢' : '🐇'}
         </button>
 
-        {/* Finger hints toggle switch */}
+        {/* Finger hints toggle */}
         <ToggleSwitch on={showFingers} onChange={() => setShowFingers(f => !f)} label="Finger-Tipps" />
       </div>
 
       {/* Main layout: portrait vs landscape */}
       {isLandscape ? (
         <div className="flex flex-row flex-1 min-h-0">
-          {/* Left: notes + lyric (sheet) + mic + progress */}
           <div className="flex flex-col flex-1 min-w-0">
             {notesView}
             {lyricBar}
             {micBar}
             {progressBar}
           </div>
-          {/* Right: full-height keyboard */}
           <div
             className="flex-shrink-0 flex flex-col py-1 pr-1 border-l border-gray-800"
             style={{ width: '40%' }}

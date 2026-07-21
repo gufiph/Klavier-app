@@ -66,6 +66,8 @@ export function usePitchDetection(): UsePitchDetectionResult {
       setPermissionDenied(false);
       setIsListening(true);
 
+      const calibOffsetCents = parseFloat(localStorage.getItem('klavier_calib') ?? '0') || 0;
+
       const detect = () => {
         if (!analyserRef.current || !detectorRef.current || !bufferRef.current) return;
         analyserRef.current.getFloatTimeDomainData(bufferRef.current);
@@ -75,9 +77,10 @@ export function usePitchDetection(): UsePitchDetectionResult {
         );
         if (clarity >= CLARITY_THRESHOLD && freq >= MIN_FREQUENCY && freq <= MAX_FREQUENCY) {
           const midi = frequencyToMidi(freq);
-          const midiRounded = Math.round(midi);
+          const adjustedMidi = midi - calibOffsetCents / 100;
+          const midiRounded = Math.round(adjustedMidi);
           const noteName = midiToNoteName(midiRounded);
-          const centsDeviation = (midi - midiRounded) * 100;
+          const centsDeviation = (adjustedMidi - midiRounded) * 100;
           setDetectedPitch({ frequency: freq, clarity, noteName, centsDeviation });
         } else {
           setDetectedPitch(null);

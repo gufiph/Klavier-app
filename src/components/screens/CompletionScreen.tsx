@@ -2,11 +2,12 @@ import type { Song } from '../../types/music';
 
 interface CompletionScreenProps {
   song: Song;
+  earnedStars: 1 | 2 | 3;
+  previousBest: number;
   onPlayAgain: () => void;
   onBackToSelector: () => void;
 }
 
-// Pre-defined confetti with staggered positions and timings
 const CONFETTI = [
   { color: '#E21C48', left: '8%',  delay: '0s',   size: 12, dur: '2.8s' },
   { color: '#F36421', left: '15%', delay: '0.3s', size: 8,  dur: '3.2s' },
@@ -28,48 +29,78 @@ const CONFETTI = [
   { color: '#6E4B9E', left: '88%', delay: '1.1s', size: 11, dur: '3.5s' },
 ];
 
-const DIFF_STARS = ['', '⭐', '⭐⭐', '⭐⭐⭐'];
+const STAR_MESSAGES = ['', 'Gut gemacht!', 'Super!', 'Perfekt! 🎉'];
 
-export function CompletionScreen({ song, onPlayAgain, onBackToSelector }: CompletionScreenProps) {
+export function CompletionScreen({ song, earnedStars, previousBest, onPlayAgain, onBackToSelector }: CompletionScreenProps) {
+  const isNewBest = earnedStars > previousBest;
+
   return (
-    <div className="relative flex flex-col items-center justify-center h-screen bg-gray-950 text-white p-6 text-center overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center h-[100dvh] bg-gray-950 text-white p-6 text-center overflow-hidden">
 
-      {/* Confetti rain */}
       {CONFETTI.map((c, i) => (
         <div
           key={i}
           className="absolute rounded-full pointer-events-none animate-confetti"
           style={{
-            left: c.left,
-            top: '-3%',
-            width: c.size,
-            height: c.size,
+            left: c.left, top: '-3%',
+            width: c.size, height: c.size,
             backgroundColor: c.color,
-            animationDelay: c.delay,
-            animationDuration: c.dur,
+            animationDelay: c.delay, animationDuration: c.dur,
           }}
         />
       ))}
 
-      {/* Content card */}
       <div className="relative z-10 flex flex-col items-center gap-4 max-w-sm w-full">
         <div className="text-7xl animate-bounce drop-shadow-lg">🎉</div>
 
         <div>
-          <h1 className="text-4xl font-black tracking-tight mb-1">Super gemacht!</h1>
+          <h1 className="text-4xl font-black tracking-tight mb-1">{STAR_MESSAGES[earnedStars]}</h1>
           <p className="text-gray-400 text-sm">Du hast das Lied gespielt!</p>
         </div>
 
+        {/* Stars display */}
+        <div className="flex gap-2 items-center">
+          {[1, 2, 3].map(s => (
+            <span
+              key={s}
+              className="transition-transform"
+              style={{
+                fontSize: 'clamp(28px, 8vw, 40px)',
+                filter: s <= earnedStars
+                  ? 'drop-shadow(0 0 8px #FFE011)'
+                  : 'grayscale(1) opacity(0.25)',
+                transform: s <= earnedStars ? 'scale(1.1)' : 'scale(0.9)',
+              }}
+            >
+              ⭐
+            </span>
+          ))}
+        </div>
+
+        {isNewBest && previousBest > 0 && (
+          <div
+            className="px-4 py-1.5 rounded-full text-sm font-black text-white"
+            style={{ background: 'linear-gradient(to right, #f59e0b, #ef4444)' }}
+          >
+            🏆 Neue Bestleistung!
+          </div>
+        )}
+        {previousBest === 0 && (
+          <div
+            className="px-4 py-1.5 rounded-full text-sm font-black text-white"
+            style={{ background: 'linear-gradient(to right, #7c3aed, #2563eb)' }}
+          >
+            ✨ Erstes Mal gespielt!
+          </div>
+        )}
+
         <div
-          className="w-full rounded-3xl p-6 border border-gray-700/60"
+          className="w-full rounded-3xl p-5 border border-gray-700/60"
           style={{ background: 'rgba(17,24,39,0.85)', backdropFilter: 'blur(8px)' }}
         >
-          <div className="text-5xl mb-2">{song.coverEmoji}</div>
-          <div className="font-bold text-white text-lg leading-tight mb-1">{song.title}</div>
-          {song.subtitle && (
-            <div className="text-gray-500 text-sm mb-2">{song.subtitle}</div>
-          )}
-          <div className="text-2xl">{DIFF_STARS[song.difficulty]}</div>
+          <div className="text-4xl mb-1">{song.coverEmoji}</div>
+          <div className="font-bold text-white text-base leading-tight mb-0.5">{song.title}</div>
+          {song.subtitle && <div className="text-gray-500 text-xs">{song.subtitle}</div>}
         </div>
 
         <div className="flex flex-col gap-3 w-full">

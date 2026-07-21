@@ -1,11 +1,13 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import type { Song } from '../../types/music';
 import { SongCard } from '../ui/SongCard';
 import { useProgress } from '../../hooks/useProgress';
+import { noteToFrequency } from '../../utils/noteUtils';
 
 interface SongSelectorProps {
   songs: Song[];
   onSelectSong: (song: Song) => void;
+  onCalibrate?: () => void;
 }
 
 type FilterValue = 0 | 1 | 2 | 3 | string;
@@ -18,15 +20,66 @@ const DIFF_FILTERS = [
 ];
 
 const GENRE_META: Record<string, { emoji: string; label: string }> = {
-  Disney: { emoji: '🏰', label: 'Disney' },
-  Pop:    { emoji: '🎵', label: 'Pop' },
-  Film:   { emoji: '🎬', label: 'Film' },
-  Kinder: { emoji: '🌈', label: 'Kinder' },
+  Disney:      { emoji: '🏰', label: 'Disney' },
+  Pop:         { emoji: '🎵', label: 'Pop' },
+  Film:        { emoji: '🎬', label: 'Film' },
+  Kinder:      { emoji: '🌈', label: 'Kinder' },
+  Weihnachten: { emoji: '🎄', label: 'Weihnachten' },
 };
 
-export function SongSelector({ songs, onSelectSong }: SongSelectorProps) {
+const GENRE_ORDER = ['Disney', 'Pop', 'Film', 'Kinder', 'Weihnachten'];
+
+function playPreviewAudio(song: Song): AudioContext | null {
+  try {
+    const ctx = new AudioContext();
+    const nonRestNotes = song.notes.filter(n => !n.rest).slice(0, 8);
+    const beatSec = 60 / (song.tempo * 1.5);
+    let t = ctx.currentTime + 0.05;
+    for (const note of nonRestNotes) {
+      const freq = noteToFrequency(note.note);
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+      const dur = beatSec * (note.duration === 'whole' ? 4 : note.duration === 'half' ? 2 : note.duration === 'eighth' ? 0.5 : 1);
+      gain.gain.setValueAtTime(0.18, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.85);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + dur * 0.85);
+      t += dur;
+    }
+    // Auto-close after preview ends
+    setTimeout(() => ctx.close(), (t - ctx.currentTime + 0.3) * 1000);
+    return ctx;
+  } catch {
+    return null;
+  }
+}
+
+export function SongSelector({ songs, onSelectSong, onCalibrate }: SongSelectorProps) {
   const [filter, setFilter] = useState<FilterValue>(0);
-  const { completed } = useProgress();
+  const [previewingId, setPreviewingId] = useState<string | null>(null);
+  const previewCtxRef = useRef<AudioContext | null>(null);
+  const { completed, stars } = useProgress();
+
+  const stopPreview = useCallback(() => {
+    previewCtxRef.current?.close();
+    previewCtxRef.current = null;
+    setPreviewingId(null);
+  }, []);
+
+  const handlePreview = useCallback((song: Song) => {
+    if (previewingId === song.id) {
+      stopPreview();
+      return;
+    }
+    stopPreview();
+    const ctx = playPreviewAudio(song);
+    previewCtxRef.current = ctx;
+    setPreviewingId(song.id);
+  }, [previewingId, stopPreview]);
 
   const counts = useMemo(() => {
     const c: Record<string | number, number> = {
@@ -44,8 +97,7 @@ export function SongSelector({ songs, onSelectSong }: SongSelectorProps) {
   const availableGenres = useMemo(() => {
     const seen = new Set<string>();
     for (const song of songs) if (song.category) seen.add(song.category);
-    const order = ['Disney', 'Pop', 'Film', 'Kinder'];
-    return order.filter(g => seen.has(g));
+    return GENRE_ORDER.filter(g => seen.has(g));
   }, [songs]);
 
   const filtered = useMemo(() => {
@@ -60,7 +112,7 @@ export function SongSelector({ songs, onSelectSong }: SongSelectorProps) {
   );
 
   return (
-    <div className="flex flex-col h-screen bg-gray-950 text-white">
+    <div className="flex flex-col h-[100dvh] bg-gray-950 text-white">
 
       {/* Header */}
       <div
@@ -74,7 +126,7 @@ export function SongSelector({ songs, onSelectSong }: SongSelectorProps) {
           >
             🎹
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <h1 className="text-xl font-black tracking-tight leading-tight">Klavier Lernen</h1>
             <p className="text-gray-500 text-xs">
               {songs.length} Lieder
@@ -83,6 +135,15 @@ export function SongSelector({ songs, onSelectSong }: SongSelectorProps) {
               )}
             </p>
           </div>
+          {onCalibrate && (
+            <button
+              onClick={onCalibrate}
+              title="Klang kalibrieren"
+              className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 transition-colors"
+            >
+              ⚙️
+            </button>
+          )}
         </div>
 
         {/* Combined filter tabs: difficulty + genre */}
@@ -105,12 +166,10 @@ export function SongSelector({ songs, onSelectSong }: SongSelectorProps) {
             </button>
           ))}
 
-          {/* Separator */}
           {availableGenres.length > 0 && (
             <div className="w-px bg-gray-700 mx-1 rounded-full flex-shrink-0" />
           )}
 
-          {/* Genre filter tabs */}
           {availableGenres.map(genre => {
             const meta = GENRE_META[genre] ?? { emoji: '🎵', label: genre };
             return (
@@ -141,8 +200,11 @@ export function SongSelector({ songs, onSelectSong }: SongSelectorProps) {
             <SongCard
               key={song.id}
               song={song}
-              onSelect={onSelectSong}
+              onSelect={song => { stopPreview(); onSelectSong(song); }}
               isCompleted={completed.has(song.id)}
+              earnedStars={stars[song.id] ?? 0}
+              onPreview={handlePreview}
+              isPreviewing={previewingId === song.id}
             />
           ))}
         </div>
