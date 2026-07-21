@@ -8,6 +8,7 @@ interface UseGameLogicResult {
   feedback: FeedbackState;
   isComplete: boolean;
   isActive: boolean;
+  wrongCount: number;
   start: () => void;
   reset: () => void;
 }
@@ -22,6 +23,7 @@ export function useGameLogic(
   const [feedback, setFeedback] = useState<FeedbackState>('idle');
   const [isActive, setIsActive] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [wrongCount, setWrongCount] = useState(0);
 
   const currentNoteIndexRef = useRef(0);
   const isActiveRef = useRef(false);
@@ -71,6 +73,7 @@ export function useGameLogic(
     if (detected === expected && centsOk) {
       processingRef.current = true;
       setFeedback('correct');
+      onNoteCorrect?.();
       feedbackTimerRef.current = setTimeout(() => {
         setFeedback('idle');
         advanceToIndex(idx + 1);
@@ -78,6 +81,7 @@ export function useGameLogic(
     } else if (detected !== expected) {
       clearTimeout(feedbackTimerRef.current);
       setFeedback('wrong');
+      setWrongCount(c => c + 1);
       feedbackTimerRef.current = setTimeout(() => setFeedback('idle'), 300);
     }
   }, [detectedPitch, song, onNoteCorrect, advanceToIndex]);
@@ -92,6 +96,7 @@ export function useGameLogic(
     setFeedback('idle');
     setIsComplete(false);
     setIsActive(true);
+    setWrongCount(0);
     const s = songRef.current;
     if (s?.notes[0]?.rest) {
       restTimerRef.current = setTimeout(
@@ -111,6 +116,7 @@ export function useGameLogic(
     setFeedback('idle');
     setIsComplete(false);
     setIsActive(false);
+    setWrongCount(0);
   }, []);
 
   useEffect(() => {
@@ -120,5 +126,5 @@ export function useGameLogic(
     };
   }, []);
 
-  return { currentNoteIndex, feedback, isComplete, isActive, start, reset };
+  return { currentNoteIndex, feedback, isComplete, isActive, wrongCount, start, reset };
 }

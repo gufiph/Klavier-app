@@ -11,18 +11,67 @@ import { MicFeedbackBar } from '../feedback/MicFeedbackBar';
 import { CorrectFlash } from '../feedback/CorrectFlash';
 import { ProgressDots } from '../feedback/ProgressDots';
 
+function useMetronome(bpm: number, beatsPerMeasure: number, active: boolean, audioCtx: AudioContext | null) {
+  const [beat, setBeat] = useState(0);
+  const beatRef = useRef(0);
+
+  useEffect(() => {
+    if (!active) { setBeat(0); return; }
+    const ms = (60 / bpm) * 1000;
+    const id = setInterval(() => {
+      beatRef.current = (beatRef.current + 1) % beatsPerMeasure;
+      setBeat(beatRef.current);
+      // Soft click via Web Audio
+      if (audioCtx && audioCtx.state === 'running') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = beatRef.current === 0 ? 880 : 660;
+        gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.06);
+      }
+    }, ms);
+    return () => clearInterval(id);
+  }, [bpm, beatsPerMeasure, active, audioCtx]);
+
+  return beat;
+}
+
+function MetronomeBar({ beat, total, active }: { beat: number; total: number; active: boolean }) {
+  if (!active) return null;
+  return (
+    <div className="flex-shrink-0 flex items-center justify-center gap-2 py-1.5 px-4 bg-gray-900 border-t border-gray-800">
+      {Array.from({ length: total }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-full transition-all"
+          style={{
+            width: i === beat ? 14 : 8,
+            height: i === beat ? 14 : 8,
+            background: i === beat ? (i === 0 ? '#f59e0b' : '#6b7280') : '#374151',
+            boxShadow: i === beat ? `0 0 8px ${i === 0 ? '#f59e0b' : '#6b7280'}` : 'none',
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 type ViewMode = 'waterfall' | 'sheet';
 type LayoutMode = 'portrait' | 'landscape';
 
 interface PlayScreenProps {
   song: Song;
   onBack: () => void;
-  onComplete: () => void;
+  onComplete: (earnedStars: 1 | 2 | 3) => void;
 }
 
 const DIFF_DOT_COLOR = ['', '#22c55e', '#f59e0b', '#ef4444'];
 
-// Toggle switch for finger hints
 function ToggleSwitch({ on, onChange, label }: { on: boolean; onChange: () => void; label: string }) {
   return (
     <button
@@ -35,7 +84,6 @@ function ToggleSwitch({ on, onChange, label }: { on: boolean; onChange: () => vo
       }}
     >
       <span className="text-sm">👆</span>
-      {/* Visual switch track */}
       <div
         className="relative flex-shrink-0 rounded-full transition-colors"
         style={{ width: 24, height: 13, background: on ? '#7c3aed' : '#4b5563' }}
@@ -56,26 +104,71 @@ export function PlayScreen({ song, onBack, onComplete }: PlayScreenProps) {
   const [layout, setLayout] = useState<LayoutMode>('portrait');
   const [tempoMult, setTempoMult] = useState(1.0);
   const [showFingers, setShowFingers] = useState(false);
+  const [hintLevel, setHintLevel] = useState<0 | 1 | 2>(0);
+  const [metronomeOn, setMetronomeOn] = useState(false);
+  const [accompanimentOn, setAccompanimentOn] = useState(false);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const accompanimentRef = useRef<{ osc: OscillatorNode; gain: GainNode } | null>(null);
+  const hint1Ref = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const hint2Ref = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const { markComplete } = useProgress();
   const { detectedPitch, isListening, permissionDenied, startListening, stopListening } =
     usePitchDetection();
   useAudioFeedback();
-  const { currentNoteIndex, feedback, isComplete, start, reset } = useGameLogic(
+  const { currentNoteIndex, feedback, isComplete, wrongCount, start, reset } = useGameLogic(
     song,
     gameStarted ? detectedPitch : null,
     undefined,
     tempoMult
   );
 
+  const metronomeBeat = useMetronome(
+    song.tempo * tempoMult,
+    song.timeSignature[0],
+    gameStarted && metronomeOn,
+    audioCtxRef.current
+  );
+
+  // Accompaniment: simple bass drone on C2 when active
+  useEffect(() => {
+    if (!gameStarted || !accompanimentOn || !audioCtxRef.current) return;
+    const ctx = audioCtxRef.current;
+    if (ctx.state !== 'running') return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 65.41; // C2
+    gain.gain.value = 0.06;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    accompanimentRef.current = { osc, gain };
+    return () => { osc.stop(); gain.disconnect(); accompanimentRef.current = null; };
+  }, [gameStarted, accompanimentOn]);
+
+  // Reset hint timers whenever the note advances
+  useEffect(() => {
+    if (!gameStarted) return;
+    clearTimeout(hint1Ref.current);
+    clearTimeout(hint2Ref.current);
+    setHintLevel(0);
+    hint1Ref.current = setTimeout(() => setHintLevel(1), 3000);
+    hint2Ref.current = setTimeout(() => setHintLevel(2), 7000);
+    return () => {
+      clearTimeout(hint1Ref.current);
+      clearTimeout(hint2Ref.current);
+    };
+  }, [currentNoteIndex, gameStarted]);
+
   useEffect(() => {
     if (isComplete) {
-      markComplete(song.id);
-      const t = setTimeout(() => onComplete(), 800);
+      const earnedStars: 1 | 2 | 3 = wrongCount <= 2 ? 3 : wrongCount <= 8 ? 2 : 1;
+      markComplete(song.id, earnedStars);
+      const t = setTimeout(() => onComplete(earnedStars), 800);
       return () => clearTimeout(t);
     }
-  }, [isComplete, onComplete, markComplete, song.id]);
+  }, [isComplete, onComplete, markComplete, song.id, wrongCount]);
 
   const handleStart = useCallback(async () => {
     if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
@@ -88,6 +181,8 @@ export function PlayScreen({ song, onBack, onComplete }: PlayScreenProps) {
   const handleBack = useCallback(() => {
     stopListening();
     reset();
+    clearTimeout(hint1Ref.current);
+    clearTimeout(hint2Ref.current);
     onBack();
   }, [stopListening, reset, onBack]);
 
@@ -107,7 +202,6 @@ export function PlayScreen({ song, onBack, onComplete }: PlayScreenProps) {
     []
   );
 
-  // Reusable sub-components
   const notesView = (
     <div className="flex-1 min-h-0">
       {viewMode === 'waterfall' ? (
@@ -125,10 +219,9 @@ export function PlayScreen({ song, onBack, onComplete }: PlayScreenProps) {
   ) : null;
 
   const micBar = <MicFeedbackBar detectedPitch={detectedPitch} isListening={isListening} />;
+  const metBar = <MetronomeBar beat={metronomeBeat} total={song.timeSignature[0]} active={gameStarted && metronomeOn} />;
 
-  const progressBar = (
-    <ProgressDots current={completedCount} total={nonRestCount} />
-  );
+  const progressBar = <ProgressDots current={completedCount} total={nonRestCount} />;
 
   const keyboard = (
     <PianoKeyboard
@@ -136,6 +229,7 @@ export function PlayScreen({ song, onBack, onComplete }: PlayScreenProps) {
       detectedNote={detectedPitch?.noteName ?? null}
       feedback={feedback}
       showFingerHints={showFingers}
+      hintLevel={hintLevel}
     />
   );
 
@@ -185,7 +279,7 @@ export function PlayScreen({ song, onBack, onComplete }: PlayScreenProps) {
           >🎨</button>
         )}
 
-        {/* Portrait ↕ / Landscape ↔ toggle */}
+        {/* Portrait / Landscape toggle */}
         <button
           onClick={toggleLayout}
           title={isLandscape ? 'Hochformat' : 'Querformat'}
@@ -207,21 +301,42 @@ export function PlayScreen({ song, onBack, onComplete }: PlayScreenProps) {
           {tempoMult < 1 ? '🐢' : '🐇'}
         </button>
 
-        {/* Finger hints toggle switch */}
+        {/* Metronome toggle */}
+        <button
+          onClick={() => setMetronomeOn(m => !m)}
+          title="Metronom"
+          className={`p-1.5 rounded-xl text-sm transition-colors flex-shrink-0 border ${
+            metronomeOn ? 'bg-orange-700/80 border-orange-600 text-white' : 'bg-gray-800 border-gray-700 text-gray-400'
+          }`}
+        >
+          🎵
+        </button>
+
+        {/* Accompaniment toggle */}
+        <button
+          onClick={() => setAccompanimentOn(a => !a)}
+          title="Begleitung"
+          className={`p-1.5 rounded-xl text-sm transition-colors flex-shrink-0 border ${
+            accompanimentOn ? 'bg-teal-700/80 border-teal-600 text-white' : 'bg-gray-800 border-gray-700 text-gray-400'
+          }`}
+        >
+          🎸
+        </button>
+
+        {/* Finger hints toggle */}
         <ToggleSwitch on={showFingers} onChange={() => setShowFingers(f => !f)} label="Finger-Tipps" />
       </div>
 
       {/* Main layout: portrait vs landscape */}
       {isLandscape ? (
         <div className="flex flex-row flex-1 min-h-0">
-          {/* Left: notes + lyric (sheet) + mic + progress */}
           <div className="flex flex-col flex-1 min-w-0">
             {notesView}
             {lyricBar}
+            {metBar}
             {micBar}
             {progressBar}
           </div>
-          {/* Right: full-height keyboard */}
           <div
             className="flex-shrink-0 flex flex-col py-1 pr-1 border-l border-gray-800"
             style={{ width: '40%' }}
@@ -235,6 +350,7 @@ export function PlayScreen({ song, onBack, onComplete }: PlayScreenProps) {
         <>
           {notesView}
           {lyricBar}
+          {metBar}
           {micBar}
           <div className="h-36 flex-shrink-0 px-1 pb-1">
             {keyboard}
