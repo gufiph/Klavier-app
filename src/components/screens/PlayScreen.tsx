@@ -130,22 +130,60 @@ export function PlayScreen({ song, onBack, onComplete }: PlayScreenProps) {
     audioCtxRef.current
   );
 
-  // Accompaniment: simple bass drone on C2 when active
+  // Accompaniment: rhythmic bass pattern (root + fifth alternating per beat)
   useEffect(() => {
     if (!gameStarted || !accompanimentOn || !audioCtxRef.current) return;
     const ctx = audioCtxRef.current;
     if (ctx.state !== 'running') return;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.value = 65.41; // C2
-    gain.gain.value = 0.06;
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    accompanimentRef.current = { osc, gain };
-    return () => { osc.stop(); gain.disconnect(); accompanimentRef.current = null; };
-  }, [gameStarted, accompanimentOn]);
+
+    const msPerBeat = (60 / (song.tempo * tempoMult)) * 1000;
+    const timbreId = localStorage.getItem('klavier_timbre') ?? 'piano';
+    const oscTypeMap: Record<string, OscillatorType> = {
+      piano: 'triangle', organ: 'sine', xylophone: 'square', strings: 'sawtooth',
+    };
+    const oscType: OscillatorType = oscTypeMap[timbreId] ?? 'triangle';
+
+    // Detect root note class from first non-rest note
+    const firstNote = song.notes.find(n => !n.rest);
+    const rootClass = firstNote ? firstNote.note.replace(/\d+$/, '') : 'C';
+    const FIFTHS: Record<string, string> = {
+      'C':'G','D':'A','E':'B','F':'C','G':'D','A':'E','B':'F#',
+      'C#':'G#','D#':'A#','F#':'C#','G#':'D#','A#':'F',
+    };
+    const fifthClass = FIFTHS[rootClass] ?? 'G';
+
+    const noteFreq = (name: string, octave: number): number => {
+      const semitones: Record<string, number> = {
+        'C':0,'C#':1,'D':2,'D#':3,'E':4,'F':5,'F#':6,'G':7,'G#':8,'A':9,'A#':10,'B':11
+      };
+      const midi = 12 * (octave + 1) + (semitones[name] ?? 0);
+      return 440 * Math.pow(2, (midi - 69) / 12);
+    };
+
+    const freqs = [noteFreq(rootClass, 3), noteFreq(fifthClass, 3)];
+    let beat = 0;
+    let active = true;
+
+    const playBeat = () => {
+      if (!active || ctx.state !== 'running') return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = oscType;
+      osc.frequency.value = freqs[beat % 2];
+      const beatDur = msPerBeat / 1000;
+      gain.gain.setValueAtTime(0.07, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + beatDur * 0.85);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + beatDur * 0.85);
+      beat++;
+    };
+
+    playBeat();
+    const id = setInterval(playBeat, msPerBeat);
+    return () => { active = false; clearInterval(id); accompanimentRef.current = null; };
+  }, [gameStarted, accompanimentOn, song, tempoMult]);
 
   // Reset hint timers whenever the note advances
   useEffect(() => {

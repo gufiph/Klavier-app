@@ -7,6 +7,7 @@ import { useProfile } from './hooks/useProfile';
 import { useProgress } from './hooks/useProgress';
 import { useStreak } from './hooks/useStreak';
 import { usePracticeLog } from './hooks/usePracticeLog';
+import { useTheme } from './hooks/useTheme';
 import { SongSelector } from './components/screens/SongSelector';
 import { PlayScreen } from './components/screens/PlayScreen';
 import { CompletionScreen } from './components/screens/CompletionScreen';
@@ -16,6 +17,8 @@ import { ProfileScreen } from './components/screens/ProfileScreen';
 import { NoteQuizScreen } from './components/screens/NoteQuizScreen';
 import { RecordScreen } from './components/screens/RecordScreen';
 import { ParentLogScreen } from './components/screens/ParentLogScreen';
+import { FreePlayScreen } from './components/screens/FreePlayScreen';
+import { RhythmScreen } from './components/screens/RhythmScreen';
 
 function AppInner() {
   const needsOnboarding = !localStorage.getItem('klavier_onboarding_done');
@@ -31,6 +34,7 @@ function AppInner() {
   const { stars } = useProgress();
   const { streak, incrementStreak } = useStreak();
   const { log, addEntry } = usePracticeLog();
+  const { theme, timbre, setTheme, setTimbre } = useTheme();
 
   const handleOnboardingDone = useCallback(() => {
     localStorage.setItem('klavier_onboarding_done', '1');
@@ -73,8 +77,14 @@ function AppInner() {
     onQuiz: () => setScreen('quiz'),
     onRecord: () => setScreen('record'),
     onParentLog: () => setScreen('parent-log'),
+    onFreePlay: () => setScreen('free-play'),
+    onRhythm: () => setScreen('rhythm'),
     activeProfile,
     streak,
+    theme,
+    timbre,
+    onSetTheme: setTheme,
+    onSetTimbre: setTimbre,
   };
 
   if (screen === 'onboarding') return <OnboardingScreen onDone={handleOnboardingDone} />;
@@ -96,6 +106,8 @@ function AppInner() {
   if (screen === 'quiz') return <NoteQuizScreen onBack={() => setScreen('song-selector')} />;
   if (screen === 'record') return <RecordScreen onBack={() => setScreen('song-selector')} />;
   if (screen === 'parent-log') return <ParentLogScreen log={log} onBack={() => setScreen('song-selector')} />;
+  if (screen === 'free-play') return <FreePlayScreen onBack={() => setScreen('song-selector')} />;
+  if (screen === 'rhythm') return <RhythmScreen onBack={() => setScreen('song-selector')} />;
   if (screen === 'song-selector') return <SongSelector {...selectorProps} />;
 
   if (selectedSong) {

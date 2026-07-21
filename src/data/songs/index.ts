@@ -7,6 +7,8 @@ import { advanced2Songs } from './advanced2';
 import { extraSongs } from './extra';
 import { modernSongs } from './modern';
 import { christmasSongs } from './christmas';
+import { classicalSongs } from './classical';
+import { gamingSongs } from './gaming';
 import type { Song } from '../../types/music';
 
 export const SONG_REGISTRY: Song[] = [
@@ -19,6 +21,8 @@ export const SONG_REGISTRY: Song[] = [
   ...extraSongs,
   ...modernSongs,
   ...christmasSongs,
+  ...classicalSongs,
+  ...gamingSongs,
 ];
 
-export { beginnerSongs, beginner2Songs, intermediateSongs, intermediate2Songs, advancedSongs, advanced2Songs, extraSongs, modernSongs, christmasSongs };
+export { beginnerSongs, beginner2Songs, intermediateSongs, intermediate2Songs, advancedSongs, advanced2Songs, extraSongs, modernSongs, christmasSongs, classicalSongs, gamingSongs };

@@ -3,6 +3,7 @@ import type { Song } from '../../types/music';
 import { SongCard } from '../ui/SongCard';
 import { useProgress } from '../../hooks/useProgress';
 import { noteToFrequency } from '../../utils/noteUtils';
+import { THEMES, TIMBRES, type Theme, type Timbre } from '../../constants/themes';
 
 interface SongSelectorProps {
   songs: Song[];
@@ -12,8 +13,14 @@ interface SongSelectorProps {
   onQuiz?: () => void;
   onRecord?: () => void;
   onParentLog?: () => void;
+  onFreePlay?: () => void;
+  onRhythm?: () => void;
   activeProfile?: { name: string; avatar: string };
   streak?: number;
+  theme?: Theme;
+  timbre?: Timbre;
+  onSetTheme?: (id: string) => void;
+  onSetTimbre?: (id: string) => void;
 }
 
 type FilterValue = 0 | 1 | 2 | 3 | string;
@@ -31,9 +38,11 @@ const GENRE_META: Record<string, { emoji: string; label: string }> = {
   Film:        { emoji: '🎬', label: 'Film' },
   Kinder:      { emoji: '🌈', label: 'Kinder' },
   Weihnachten: { emoji: '🎄', label: 'Weihnachten' },
+  Klassik:     { emoji: '🎻', label: 'Klassik' },
+  Gaming:      { emoji: '🎮', label: 'Gaming' },
 };
 
-const GENRE_ORDER = ['Disney', 'Pop', 'Film', 'Kinder', 'Weihnachten'];
+const GENRE_ORDER = ['Disney', 'Pop', 'Film', 'Kinder', 'Weihnachten', 'Klassik', 'Gaming'];
 
 interface Badge { id: string; emoji: string; label: string }
 
@@ -55,6 +64,11 @@ function computeBadges(completed: Set<string>, stars: Record<string,number>, str
 function playPreviewAudio(song: Song): AudioContext | null {
   try {
     const ctx = new AudioContext();
+    const timbreId = localStorage.getItem('klavier_timbre') ?? 'piano';
+    const oscTypeMap: Record<string, OscillatorType> = {
+      piano: 'triangle', organ: 'sine', xylophone: 'square', strings: 'sawtooth',
+    };
+    const oscType: OscillatorType = oscTypeMap[timbreId] ?? 'triangle';
     const nonRestNotes = song.notes.filter(n => !n.rest).slice(0, 8);
     const beatSec = 60 / (song.tempo * 1.5);
     let t = ctx.currentTime + 0.05;
@@ -62,7 +76,7 @@ function playPreviewAudio(song: Song): AudioContext | null {
       const freq = noteToFrequency(note.note);
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.type = 'triangle';
+      osc.type = oscType;
       osc.frequency.value = freq;
       const dur = beatSec * (note.duration === 'whole' ? 4 : note.duration === 'half' ? 2 : note.duration === 'eighth' ? 0.5 : 1);
       gain.gain.setValueAtTime(0.18, t);
@@ -82,7 +96,9 @@ function playPreviewAudio(song: Song): AudioContext | null {
 
 export function SongSelector({
   songs, onSelectSong, onCalibrate, onProfiles, onQuiz, onRecord, onParentLog,
+  onFreePlay, onRhythm,
   activeProfile, streak = 0,
+  theme, timbre, onSetTheme, onSetTimbre,
 }: SongSelectorProps) {
   const [filter, setFilter] = useState<FilterValue>(0);
   const [previewingId, setPreviewingId] = useState<string | null>(null);
@@ -168,6 +184,18 @@ export function SongSelector({
 
           {/* Action buttons */}
           <div className="flex gap-1.5 flex-shrink-0">
+            {onFreePlay && (
+              <button onClick={onFreePlay} title="Freies Spielen"
+                className="w-8 h-8 rounded-xl flex items-center justify-center text-base bg-gray-800 hover:bg-gray-700 border border-gray-700 transition-colors">
+                🎹
+              </button>
+            )}
+            {onRhythm && (
+              <button onClick={onRhythm} title="Rhythmus-Training"
+                className="w-8 h-8 rounded-xl flex items-center justify-center text-base bg-gray-800 hover:bg-gray-700 border border-gray-700 transition-colors">
+                🥁
+              </button>
+            )}
             {onQuiz && (
               <button onClick={onQuiz} title="Noten-Quiz"
                 className="w-8 h-8 rounded-xl flex items-center justify-center text-base bg-gray-800 hover:bg-gray-700 border border-gray-700 transition-colors">
@@ -206,6 +234,51 @@ export function SongSelector({
                 {b.label}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Theme & Timbre pickers */}
+        {(onSetTheme || onSetTimbre) && (
+          <div className="flex gap-2 mb-2 flex-wrap">
+            {onSetTheme && (
+              <div className="flex gap-1 items-center">
+                {THEMES.map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => onSetTheme(t.id)}
+                    title={t.name}
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-sm transition-transform active:scale-90"
+                    style={{
+                      background: t.bg,
+                      border: theme?.id === t.id ? `2px solid ${t.accent}` : '2px solid rgba(255,255,255,0.1)',
+                      boxShadow: theme?.id === t.id ? `0 0 8px ${t.accent}` : 'none',
+                    }}
+                  >
+                    <span style={{ fontSize: 14 }}>{t.emoji}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {onSetTheme && onSetTimbre && <div className="w-px bg-gray-700 mx-0.5" />}
+            {onSetTimbre && (
+              <div className="flex gap-1 items-center">
+                {TIMBRES.map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => onSetTimbre(t.id)}
+                    title={t.name}
+                    className="px-2 py-0.5 rounded-full text-xs font-semibold transition-all active:scale-95 whitespace-nowrap"
+                    style={{
+                      background: timbre?.id === t.id ? 'rgba(124,58,237,0.3)' : 'rgba(31,41,55,0.8)',
+                      border: timbre?.id === t.id ? '1px solid #7c3aed' : '1px solid rgba(75,85,99,0.6)',
+                      color: timbre?.id === t.id ? '#c4b5fd' : '#9ca3af',
+                    }}
+                  >
+                    {t.emoji} {t.name}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

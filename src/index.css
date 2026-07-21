@@ -69,3 +69,29 @@ body {
 .animate-confetti {
   animation: confetti-fall linear infinite;
 }
+
+/* Theme overrides — CSS variables used by Tailwind v4 */
+:root[data-theme="space"] {
+  --color-gray-950: #050010;
+  --color-gray-900: #0d0a2e;
+  --color-gray-800: #1a1560;
+  --color-gray-700: #2d23a0;
+}
+
+:root[data-theme="underwater"] {
+  --color-gray-950: #001525;
+  --color-gray-900: #002040;
+  --color-gray-800: #003860;
+  --color-gray-700: #004a80;
+}
+
+:root[data-theme="jungle"] {
+  --color-gray-950: #0a160a;
+  --color-gray-900: #112b11;
+  --color-gray-800: #1a3d1a;
+  --color-gray-700: #234d23;
+}
+
+html[data-theme="space"] body      { background-color: #050010; }
+html[data-theme="underwater"] body { background-color: #001525; }
+html[data-theme="jungle"] body     { background-color: #0a160a; }
