@@ -2,20 +2,40 @@ import { useState, useCallback } from 'react';
 import type { Screen } from './types/game';
 import type { Song } from './types/music';
 import { SONG_REGISTRY } from './data/songs';
+import { ProfileContext, useProfileContext } from './contexts/ProfileContext';
+import { useProfile } from './hooks/useProfile';
 import { useProgress } from './hooks/useProgress';
+import { useStreak } from './hooks/useStreak';
+import { usePracticeLog } from './hooks/usePracticeLog';
 import { SongSelector } from './components/screens/SongSelector';
 import { PlayScreen } from './components/screens/PlayScreen';
 import { CompletionScreen } from './components/screens/CompletionScreen';
 import { CalibrationScreen } from './components/screens/CalibrationScreen';
+import { OnboardingScreen } from './components/screens/OnboardingScreen';
+import { ProfileScreen } from './components/screens/ProfileScreen';
+import { NoteQuizScreen } from './components/screens/NoteQuizScreen';
+import { RecordScreen } from './components/screens/RecordScreen';
+import { ParentLogScreen } from './components/screens/ParentLogScreen';
 
-export default function App() {
+function AppInner() {
+  const needsOnboarding = !localStorage.getItem('klavier_onboarding_done');
   const needsCalib = !localStorage.getItem('klavier_calib_done');
-  const [screen, setScreen] = useState<Screen>(needsCalib ? 'calibration' : 'song-selector');
+  const initialScreen: Screen = needsOnboarding ? 'onboarding' : needsCalib ? 'calibration' : 'song-selector';
+
+  const [screen, setScreen] = useState<Screen>(initialScreen);
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [earnedStars, setEarnedStars] = useState<1 | 2 | 3>(1);
   const [previousBest, setPreviousBest] = useState(0);
 
+  const { profiles, activeId, activeProfile, setActive, createProfile, deleteProfile } = useProfileContext();
   const { stars } = useProgress();
+  const { streak, incrementStreak } = useStreak();
+  const { log, addEntry } = usePracticeLog();
+
+  const handleOnboardingDone = useCallback(() => {
+    localStorage.setItem('klavier_onboarding_done', '1');
+    setScreen('calibration');
+  }, []);
 
   const handleCalibrationDone = useCallback(() => {
     setScreen('song-selector');
@@ -29,10 +49,12 @@ export default function App() {
   const handleComplete = useCallback((es: 1 | 2 | 3) => {
     if (selectedSong) {
       setPreviousBest(stars[selectedSong.id] ?? 0);
+      addEntry({ songId: selectedSong.id, title: selectedSong.title, emoji: selectedSong.coverEmoji, stars: es });
     }
+    incrementStreak();
     setEarnedStars(es);
     setScreen('completion');
-  }, [selectedSong, stars]);
+  }, [selectedSong, stars, addEntry, incrementStreak]);
 
   const handleBackToSelector = useCallback(() => {
     setSelectedSong(null);
@@ -43,29 +65,42 @@ export default function App() {
     setScreen('play');
   }, []);
 
-  if (screen === 'calibration') {
-    return <CalibrationScreen onDone={handleCalibrationDone} />;
-  }
+  const selectorProps = {
+    songs: SONG_REGISTRY,
+    onSelectSong: handleSelectSong,
+    onCalibrate: () => setScreen('calibration'),
+    onProfiles: () => setScreen('profiles'),
+    onQuiz: () => setScreen('quiz'),
+    onRecord: () => setScreen('record'),
+    onParentLog: () => setScreen('parent-log'),
+    activeProfile,
+    streak,
+  };
 
-  if (screen === 'song-selector') {
+  if (screen === 'onboarding') return <OnboardingScreen onDone={handleOnboardingDone} />;
+  if (screen === 'calibration') return <CalibrationScreen onDone={handleCalibrationDone} />;
+
+  if (screen === 'profiles') {
     return (
-      <SongSelector
-        songs={SONG_REGISTRY}
-        onSelectSong={handleSelectSong}
-        onCalibrate={() => setScreen('calibration')}
+      <ProfileScreen
+        profiles={profiles}
+        activeId={activeId}
+        onSelect={id => { setActive(id); setScreen('song-selector'); }}
+        onCreate={createProfile}
+        onDelete={deleteProfile}
+        onDone={() => setScreen('song-selector')}
       />
     );
   }
 
+  if (screen === 'quiz') return <NoteQuizScreen onBack={() => setScreen('song-selector')} />;
+  if (screen === 'record') return <RecordScreen onBack={() => setScreen('song-selector')} />;
+  if (screen === 'parent-log') return <ParentLogScreen log={log} onBack={() => setScreen('song-selector')} />;
+  if (screen === 'song-selector') return <SongSelector {...selectorProps} />;
+
   if (selectedSong) {
     if (screen === 'play') {
-      return (
-        <PlayScreen
-          song={selectedSong}
-          onBack={handleBackToSelector}
-          onComplete={handleComplete}
-        />
-      );
+      return <PlayScreen song={selectedSong} onBack={handleBackToSelector} onComplete={handleComplete} />;
     }
     if (screen === 'completion') {
       return (
@@ -73,6 +108,7 @@ export default function App() {
           song={selectedSong}
           earnedStars={earnedStars}
           previousBest={previousBest}
+          streak={streak}
           onPlayAgain={handlePlayAgain}
           onBackToSelector={handleBackToSelector}
         />
@@ -80,11 +116,14 @@ export default function App() {
     }
   }
 
+  return <SongSelector {...selectorProps} />;
+}
+
+export default function App() {
+  const profileData = useProfile();
   return (
-    <SongSelector
-      songs={SONG_REGISTRY}
-      onSelectSong={handleSelectSong}
-      onCalibrate={() => setScreen('calibration')}
-    />
+    <ProfileContext.Provider value={profileData}>
+      <AppInner />
+    </ProfileContext.Provider>
   );
 }

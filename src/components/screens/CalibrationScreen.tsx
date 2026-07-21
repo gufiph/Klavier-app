@@ -3,6 +3,44 @@ import { PitchDetector } from 'pitchy';
 import { frequencyToMidi } from '../../utils/noteUtils';
 import { CLARITY_THRESHOLD, MIN_FREQUENCY, MAX_FREQUENCY } from '../../constants/game';
 
+function SensitivitySlider() {
+  const [val, setVal] = useState(() => {
+    const stored = parseFloat(localStorage.getItem('klavier_sensitivity') ?? '');
+    return isNaN(stored) ? CLARITY_THRESHOLD : stored;
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = parseFloat(e.target.value);
+    setVal(v);
+    localStorage.setItem('klavier_sensitivity', String(v));
+  };
+
+  const label = val < 0.75 ? 'Sehr empfindlich' : val < 0.82 ? 'Empfindlich' : val < 0.88 ? 'Normal' : 'Streng';
+
+  return (
+    <div className="w-full bg-gray-900 rounded-2xl p-4 border border-gray-700">
+      <div className="flex justify-between items-center mb-2">
+        <span className="text-sm font-bold">🎤 Mikrofon-Empfindlichkeit</span>
+        <span className="text-xs text-gray-400">{label}</span>
+      </div>
+      <input
+        type="range"
+        min="0.65" max="0.93" step="0.01"
+        value={val}
+        onChange={handleChange}
+        className="w-full accent-purple-500"
+      />
+      <div className="flex justify-between text-xs text-gray-600 mt-1">
+        <span>Sehr empfindlich</span>
+        <span>Streng</span>
+      </div>
+      <p className="text-gray-600 text-xs mt-2">
+        Empfindlicher = erkennt leisere Töne, aber auch mehr Störgeräusche.
+      </p>
+    </div>
+  );
+}
+
 interface CalibrationScreenProps {
   onDone: () => void;
 }
@@ -154,6 +192,7 @@ export function CalibrationScreen({ onDone }: CalibrationScreenProps) {
               )}
             </p>
             <div className="text-5xl">✅</div>
+            <SensitivitySlider />
             <button
               onClick={onDone}
               className="w-full py-4 rounded-2xl text-lg font-black text-white transition-transform active:scale-95"

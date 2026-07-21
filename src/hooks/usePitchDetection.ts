@@ -67,6 +67,7 @@ export function usePitchDetection(): UsePitchDetectionResult {
       setIsListening(true);
 
       const calibOffsetCents = parseFloat(localStorage.getItem('klavier_calib') ?? '0') || 0;
+      const clarityThreshold = parseFloat(localStorage.getItem('klavier_sensitivity') ?? String(CLARITY_THRESHOLD)) || CLARITY_THRESHOLD;
 
       const detect = () => {
         if (!analyserRef.current || !detectorRef.current || !bufferRef.current) return;
@@ -75,7 +76,7 @@ export function usePitchDetection(): UsePitchDetectionResult {
           bufferRef.current,
           audioContext.sampleRate
         );
-        if (clarity >= CLARITY_THRESHOLD && freq >= MIN_FREQUENCY && freq <= MAX_FREQUENCY) {
+        if (clarity >= clarityThreshold && freq >= MIN_FREQUENCY && freq <= MAX_FREQUENCY) {
           const midi = frequencyToMidi(freq);
           const adjustedMidi = midi - calibOffsetCents / 100;
           const midiRounded = Math.round(adjustedMidi);

@@ -4,6 +4,7 @@ interface CompletionScreenProps {
   song: Song;
   earnedStars: 1 | 2 | 3;
   previousBest: number;
+  streak?: number;
   onPlayAgain: () => void;
   onBackToSelector: () => void;
 }
@@ -31,7 +32,7 @@ const CONFETTI = [
 
 const STAR_MESSAGES = ['', 'Gut gemacht!', 'Super!', 'Perfekt! 🎉'];
 
-export function CompletionScreen({ song, earnedStars, previousBest, onPlayAgain, onBackToSelector }: CompletionScreenProps) {
+export function CompletionScreen({ song, earnedStars, previousBest, streak = 0, onPlayAgain, onBackToSelector }: CompletionScreenProps) {
   const isNewBest = earnedStars > previousBest;
 
   return (
@@ -77,22 +78,32 @@ export function CompletionScreen({ song, earnedStars, previousBest, onPlayAgain,
           ))}
         </div>
 
-        {isNewBest && previousBest > 0 && (
-          <div
-            className="px-4 py-1.5 rounded-full text-sm font-black text-white"
-            style={{ background: 'linear-gradient(to right, #f59e0b, #ef4444)' }}
-          >
-            🏆 Neue Bestleistung!
-          </div>
-        )}
-        {previousBest === 0 && (
-          <div
-            className="px-4 py-1.5 rounded-full text-sm font-black text-white"
-            style={{ background: 'linear-gradient(to right, #7c3aed, #2563eb)' }}
-          >
-            ✨ Erstes Mal gespielt!
-          </div>
-        )}
+        <div className="flex gap-2 flex-wrap justify-center">
+          {isNewBest && previousBest > 0 && (
+            <div
+              className="px-4 py-1.5 rounded-full text-sm font-black text-white"
+              style={{ background: 'linear-gradient(to right, #f59e0b, #ef4444)' }}
+            >
+              🏆 Neue Bestleistung!
+            </div>
+          )}
+          {previousBest === 0 && (
+            <div
+              className="px-4 py-1.5 rounded-full text-sm font-black text-white"
+              style={{ background: 'linear-gradient(to right, #7c3aed, #2563eb)' }}
+            >
+              ✨ Erstes Mal gespielt!
+            </div>
+          )}
+          {streak > 1 && (
+            <div
+              className="px-4 py-1.5 rounded-full text-sm font-black text-white"
+              style={{ background: 'linear-gradient(to right, #f59e0b, #d97706)' }}
+            >
+              🔥 {streak} Tage in Folge!
+            </div>
+          )}
+        </div>
 
         <div
           className="w-full rounded-3xl p-5 border border-gray-700/60"
