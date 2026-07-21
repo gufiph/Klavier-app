@@ -6,6 +6,7 @@ interface PianoKeyboardProps {
   expectedNote: string | null;
   detectedNote: string | null;
   feedback: FeedbackState;
+  showFingerHints?: boolean;
 }
 
 const ALL_WHITE = PIANO_KEYS.filter(k => k.type === 'white');
@@ -14,15 +15,27 @@ const WK = WHITE_KEY_COUNT;
 const WK_PCT = 100 / WK;
 const BK_PCT = WK_PCT * 0.58;
 
+// Simple right-hand finger mapping based on note letter
+const FINGER_MAP: Record<string, number> = {
+  C: 1, D: 2, E: 3, F: 4, G: 5, A: 5, B: 4,
+};
+const FINGER_MAP_SHARP: Record<string, number> = {
+  'C#': 1, 'D#': 2, 'F#': 4, 'G#': 5, 'A#': 5,
+};
+
+function getFingerHint(note: string): number {
+  const letter = note.replace(/\d/g, '');
+  return FINGER_MAP_SHARP[letter] ?? FINGER_MAP[letter.replace('#', '')] ?? 1;
+}
+
 function displayLetter(note: string): string {
   const raw = note.replace(/[#\d]/g, '');
   return raw === 'B' ? 'H' : raw;
 }
 
-export function PianoKeyboard({ expectedNote, detectedNote }: PianoKeyboardProps) {
+export function PianoKeyboard({ expectedNote, detectedNote, showFingerHints = false }: PianoKeyboardProps) {
   const expectedKey = expectedNote ? PIANO_KEYS.find(k => k.note === expectedNote) : null;
 
-  // Center X of the expected key in percent
   const indicatorLeft = expectedKey
     ? expectedKey.type === 'black'
       ? (expectedKey.whiteIndex + 1) * WK_PCT
@@ -31,6 +44,7 @@ export function PianoKeyboard({ expectedNote, detectedNote }: PianoKeyboardProps
 
   const indicatorColor = expectedKey ? getNoteColor(expectedKey.note) : '#fff';
   const indicatorLetter = expectedKey ? displayLetter(expectedKey.note) : '';
+  const fingerNum = expectedNote && showFingerHints ? getFingerHint(expectedNote) : null;
 
   return (
     <div className="relative w-full h-full flex flex-col select-none overflow-hidden">
@@ -54,6 +68,18 @@ export function PianoKeyboard({ expectedNote, detectedNote }: PianoKeyboardProps
             >
               {indicatorLetter}
             </div>
+            {fingerNum !== null && (
+              <div
+                className="font-black text-center leading-none mt-0.5"
+                style={{
+                  color: indicatorColor,
+                  fontSize: 'clamp(8px, 1.8vw, 14px)',
+                  textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+                }}
+              >
+                {fingerNum}
+              </div>
+            )}
             <span style={{ color: indicatorColor, fontSize: '9px', lineHeight: 1 }}>▼</span>
           </div>
         )}
@@ -89,7 +115,6 @@ export function PianoKeyboard({ expectedNote, detectedNote }: PianoKeyboardProps
                   style={{ backgroundColor: color, opacity: 0.35 }}
                 />
               )}
-              {/* Octave label on C keys for orientation */}
               {isC && !isActive && (
                 <span
                   className="text-gray-300 select-none pointer-events-none relative z-10"
